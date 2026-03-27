@@ -104,6 +104,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 @keyframes pu{0%,100%{opacity:1}50%{opacity:.3}}
 .sp{display:inline-block;width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:ro .7s linear infinite;vertical-align:middle;margin-right:5px;}
 @keyframes ro{to{transform:rotate(360deg)}}
+
+/* ── CHART STYLES ── */
+.chart-wrap{margin-bottom:10px;}
+.chart-btns{display:flex;gap:4px;margin-bottom:6px;}
+.chart-btn{font-family:var(--font-mono);font-size:9px;padding:2px 7px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:2px;cursor:pointer;transition:all .1s;}
+.chart-btn:hover{color:var(--text);border-color:var(--border2);}
+.chart-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(79,142,247,.08);}
+.chart-container{position:relative;width:100%;height:80px;cursor:crosshair;}
+.chart-svg{width:100%;height:80px;display:block;}
+.chart-tooltip{position:absolute;top:0;left:0;pointer-events:none;display:none;z-index:10;}
+.chart-tooltip-box{background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:4px 8px;white-space:nowrap;}
+.chart-tooltip-date{font-family:var(--font-mono);font-size:9px;color:var(--muted);}
+.chart-tooltip-price{font-family:var(--font-mono);font-size:12px;font-weight:600;}
+.chart-meta{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:3px;}
+
 </style>
 </head>
 <body>
@@ -285,10 +300,11 @@ async function fetchTicker(ticker) {
   let wk1Pct=null, mo1Pct=null, ytdPct=null, yr1Pct=null;
 
   // Try multiple endpoint formats — FMP has changed paths over time
+  // Fetch 5 years of data to support 3Y and 5Y chart ranges
   const endpoints = [
-    `/historical-price-eod/full?symbol=${ticker}&from=${daysAgo(400)}&to=${toYMD(new Date())}`,
-    `/historical-price-eod?symbol=${ticker}&from=${daysAgo(400)}&to=${toYMD(new Date())}`,
-    `/historical-price-eod/light?symbol=${ticker}&from=${daysAgo(400)}&to=${toYMD(new Date())}`,
+    `/historical-price-eod/full?symbol=${ticker}&from=${daysAgo(1830)}&to=${toYMD(new Date())}`,
+    `/historical-price-eod?symbol=${ticker}&from=${daysAgo(1830)}&to=${toYMD(new Date())}`,
+    `/historical-price-eod/light?symbol=${ticker}&from=${daysAgo(1830)}&to=${toYMD(new Date())}`,
   ];
 
   let bars = null;
@@ -325,6 +341,16 @@ async function fetchTicker(ticker) {
     mo1Pct  = pct(closeBefore(daysAgo(30)));
     ytdPct  = pct(closeBefore(ytdStart()));
     yr1Pct  = pct(closeBefore(oneYrAgo()));
+
+    // Store full 5 years of price history for charting (oldest first for left-to-right)
+    const chartData = dates
+      .filter(d => d >= daysAgo(1830))
+      .map(d => ({ d, v: map[d] }))
+      .reverse();
+  return {price, prevClose, changePct, wk1Pct, mo1Pct, ytdPct, yr1Pct, mktCap, pe, vol, chartData, priceMap: map, priceDates: dates,
+    yr3Pct: pct(closeBefore(daysAgo(365*3))),
+    yr5Pct: pct(closeBefore(daysAgo(1825)))
+  };
   }
 
   return {price, prevClose, changePct, wk1Pct, mo1Pct, ytdPct, yr1Pct, mktCap, pe, vol};
@@ -618,18 +644,199 @@ function ePill(res,note){
   return`<span class="pill ${c}">${l}</span>&nbsp;<span style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">${note||''}</span>`;
 }
 
+/* ── CHART STATE & RENDERER ────────────────────────── */
+const chartRange = {}; // stores selected range per ticker, default '1M'
+
+function getChartPoints(ticker, range) {
+  const lv = live[ticker];
+  if (!lv || !lv.chartData || lv.chartData.length < 2) return null;
+
+  const today = toYMD(new Date());
+  let fromDate;
+  if (range === '1W')  fromDate = daysAgo(7);
+  else if (range === '1M')  fromDate = daysAgo(30);
+  else if (range === 'YTD') fromDate = ytdStart();
+  else if (range === '1Y')  fromDate = oneYrAgo();
+  else if (range === '3Y')  fromDate = daysAgo(365*3);
+  else if (range === '5Y')  fromDate = daysAgo(1830);
+  else fromDate = daysAgo(30);
+
+  const pts = lv.chartData.filter(p => p.d >= fromDate);
+  // Always include current price as last point
+  if (pts.length < 2) return null;
+
+  // Add today's live price as final point
+  const withToday = [...pts];
+  if (lv.price) {
+    withToday.push({ d: today, v: lv.price });
+  }
+  return withToday;
+}
+
+function drawChart(ticker, range) {
+  const pts = getChartPoints(ticker, range);
+  if (!pts || pts.length < 2) {
+    return `<div class="chart-container" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">No chart data</div>`;
+  }
+
+  const vals = pts.map(p => p.v);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range_v = maxV - minV || 1;
+  const W = 276, H = 80, PAD = 4;
+
+  const xFn = (i) => PAD + (i / (pts.length - 1)) * (W - PAD * 2);
+  const yFn = (v) => H - PAD - ((v - minV) / range_v) * (H - PAD * 2);
+
+  const polyPts = pts.map((p, i) => `${xFn(i).toFixed(1)},${yFn(p.v).toFixed(1)}`).join(' ');
+  const linePath = pts.map((p, i) => `${i===0?'M':'L'}${xFn(i).toFixed(1)},${yFn(p.v).toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L${xFn(pts.length-1).toFixed(1)},${H} L${PAD},${H} Z`;
+
+  const isUp = pts[pts.length-1].v >= pts[0].v;
+  const lineColor = isUp ? 'var(--green)' : 'var(--red)';
+  const lineColorHex = isUp ? '#3dd68c' : '#f74f4f';
+  const areaColorStart = isUp ? 'rgba(61,214,140,0.18)' : 'rgba(247,79,79,0.15)';
+  const areaColorEnd   = isUp ? 'rgba(61,214,140,0.01)' : 'rgba(247,79,79,0.01)';
+
+  const lastX = xFn(pts.length - 1);
+  const lastY = yFn(pts[pts.length - 1].v);
+  const gradId = `g_${ticker}_${range}`;
+
+  // Store pts for hover access
+  window[`chartPts_${ticker}_${range}`] = pts;
+
+  const containerId = `chartc_${ticker}`;
+  const ttId = `charttt_${ticker}`;
+  const crossId = `chartcr_${ticker}`;
+  const dotId = `chartdot_${ticker}`;
+
+  return `
+  <div class="chart-container" id="${containerId}"
+    onmousemove="chartHover(event,'${ticker}','${range}',${W},${H},${PAD})"
+    onmouseleave="chartLeave('${ticker}')">
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${areaColorStart}"/>
+          <stop offset="100%" stop-color="${areaColorEnd}"/>
+        </linearGradient>
+      </defs>
+      <line x1="${PAD}" y1="${H/2}" x2="${W-PAD}" y2="${H/2}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3"/>
+      <path d="${areaPath}" fill="url(#${gradId})"/>
+      <polyline points="${polyPts}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <line id="${crossId}" x1="0" y1="0" x2="0" y2="${H}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
+      <circle id="${dotId}" cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3.5" fill="${lineColorHex}" opacity="1"/>
+      <line x1="${PAD}" y1="${yFn(pts[0].v).toFixed(1)}" x2="${W-PAD}" y2="${yFn(pts[0].v).toFixed(1)}" stroke="var(--border2)" stroke-width="1" stroke-dasharray="4,3"/>
+    </svg>
+    <div class="chart-tooltip" id="${ttId}">
+      <div class="chart-tooltip-box">
+        <div class="chart-tooltip-date" id="${ttId}_date"></div>
+        <div class="chart-tooltip-price" id="${ttId}_price" style="color:${lineColorHex}"></div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-meta">
+    <span>$${minV.toFixed(2)} low</span>
+    <span style="color:${lineColor}" id="chartcur_${ticker}">$${pts[pts.length-1].v.toFixed(2)}</span>
+    <span>$${maxV.toFixed(2)} high</span>
+  </div>`;
+}
+
+function chartHover(e, ticker, range, W, H, PAD) {
+  const pts = window[`chartPts_${ticker}_${range}`];
+  if (!pts || pts.length < 2) return;
+
+  const container = document.getElementById(`chartc_${ticker}`);
+  const rect = container.getBoundingClientRect();
+  const mouseX = ((e.clientX - rect.left) / rect.width) * W;
+  const clampedX = Math.max(PAD, Math.min(W - PAD, mouseX));
+
+  const idx = Math.round(((clampedX - PAD) / (W - PAD * 2)) * (pts.length - 1));
+  const safeIdx = Math.max(0, Math.min(pts.length - 1, idx));
+  const pt = pts[safeIdx];
+
+  const vals = pts.map(p => p.v);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range_v = maxV - minV || 1;
+
+  const xPos = PAD + (safeIdx / (pts.length - 1)) * (W - PAD * 2);
+  const yPos = H - PAD - ((pt.v - minV) / range_v) * (H - PAD * 2);
+
+  const cross = document.getElementById(`chartcr_${ticker}`);
+  if (cross) { cross.setAttribute('x1', xPos); cross.setAttribute('x2', xPos); cross.setAttribute('opacity', '0.5'); }
+
+  const dot = document.getElementById(`chartdot_${ticker}`);
+  if (dot) { dot.setAttribute('cx', xPos); dot.setAttribute('cy', yPos); }
+
+  const dateStr = pt.d ? new Date(pt.d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+
+  const tt = document.getElementById(`charttt_${ticker}`);
+  const ttDate = document.getElementById(`charttt_${ticker}_date`);
+  const ttPrice = document.getElementById(`charttt_${ticker}_price`);
+
+  if (tt && ttDate && ttPrice) {
+    ttDate.textContent = dateStr;
+    ttPrice.textContent = '$' + pt.v.toFixed(2);
+    tt.style.display = 'block';
+    const pxX = (xPos / W) * rect.width;
+    const ttW = 110;
+    tt.style.left = (pxX + ttW + 10 > rect.width ? pxX - ttW - 4 : pxX + 8) + 'px';
+    tt.style.top = '4px';
+  }
+
+  const cur = document.getElementById(`chartcur_${ticker}`);
+  if (cur) cur.textContent = '$' + pt.v.toFixed(2) + '  ' + dateStr;
+}
+
+function chartLeave(ticker) {
+  const tt = document.getElementById(`charttt_${ticker}`);
+  if (tt) tt.style.display = 'none';
+  const cross = document.getElementById(`chartcr_${ticker}`);
+  if (cross) cross.setAttribute('opacity', '0');
+  const lv = live[ticker];
+  if (lv && lv.price) {
+    const cur = document.getElementById(`chartcur_${ticker}`);
+    if (cur) cur.textContent = '$' + lv.price.toFixed(2);
+  }
+}
+
+function rChart(ticker) {
+  const range = chartRange[ticker] || '1M';
+  const lv = live[ticker];
+  if (!lv || lv.error) return '';
+  const ranges = ['1W','1M','YTD','1Y','3Y','5Y'];
+  const btns = ranges.map(r =>
+    `<button class="chart-btn ${r===range?'active':''}" onclick="setChartRange('${ticker}','${r}',this)">${r}</button>`
+  ).join('');
+  return `<div class="chart-wrap">
+    <div class="shd">Price chart</div>
+    <div class="chart-btns">${btns}</div>
+    <div id="chart_${ticker}">${drawChart(ticker, range)}</div>
+  </div>`;
+}
+
+function setChartRange(ticker, range, btn) {
+  chartRange[ticker] = range;
+  const wrap = btn.closest('.chart-wrap');
+  wrap.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`chart_${ticker}`).innerHTML = drawChart(ticker, range);
+}
+
 function rOverview(t){
   const lv=live[t]||{},en=EN[t],p=lv.price;
   const up=en.pt_consensus&&p?((en.pt_consensus-p)/p*100):null;
   const tp=(en.pt_low!=null&&en.pt_high!=null&&p&&en.pt_high!==en.pt_low)
     ?Math.min(96,Math.max(4,((p-en.pt_low)/(en.pt_high-en.pt_low))*100)):50;
   return`
+    ${rChart(t)}
     <div class="shd">Performance · live</div>
     <table class="ptbl">
-      <thead><tr><th></th><th>1W</th><th>1M</th><th>YTD</th><th>1Y</th></tr></thead>
+      <thead><tr><th></th><th>1W</th><th>1M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th></tr></thead>
       <tbody><tr>
         <td>Return</td>
-        <td>${ps(lv.wk1Pct)}</td><td>${ps(lv.mo1Pct)}</td><td>${ps(lv.ytdPct)}</td><td>${ps(lv.yr1Pct)}</td>
+        <td>${ps(lv.wk1Pct)}</td><td>${ps(lv.mo1Pct)}</td><td>${ps(lv.ytdPct)}</td><td>${ps(lv.yr1Pct)}</td><td>${ps(lv.yr3Pct)}</td><td>${ps(lv.yr5Pct)}</td>
       </tr></tbody>
     </table>
     <div class="shd">Analyst consensus · ${en.analyst_count} analysts</div>
@@ -655,6 +862,7 @@ function rValuation(t){
   }
   const pw=p?Math.min(97,(p/maxV)*100).toFixed(0):50;
   return`
+    ${rChart(t)}
     <div class="shd">Valuation · live</div>
     <div class="kg">
       <div class="kv"><div class="kl">Market cap</div><div class="kval">${lv.mktCap||'<span class="na">N/A</span>'}</div></div>

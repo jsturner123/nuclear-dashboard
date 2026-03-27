@@ -657,6 +657,8 @@ async function fetchFinancials(ticker) {
     CCJ:  { fwdEpsEst:0.92,  fwdEpsEst2:1.89, fwdRevEst:2.95e9, fwdRevEst2:3.40e9, fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:820e6 },
     LEU:  { fwdEpsEst:4.80,  fwdEpsEst2:5.30, fwdRevEst:320e6,  fwdRevEst2:340e6,  fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:null  },
     OKLO: { fwdEpsEst:-0.70, fwdEpsEst2:-0.50,fwdRevEst:1.5e6,  fwdRevEst2:3.3e6,  fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:null  },
+    MIR:  { fwdEpsEst:0.535, fwdEpsEst2:0.72, fwdRevEst:1.02e9, fwdRevEst2:1.08e9, fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:null  },
+    GHM:  { fwdEpsEst:2.10,  fwdEpsEst2:2.65, fwdRevEst:235e6,  fwdRevEst2:265e6,  fwdPeriod:'2027-03', fwdPeriod2:'2028-03', fwdEbitdaEst:null  },
   };
 
   if (KNOWN_ESTIMATES[ticker]) {
@@ -959,6 +961,20 @@ function rOverview(t){
 
 function rValuation(t){
   const lv=live[t]||{},en=EN[t],p=lv.price;
+  const fin=finCache[t]||{};
+  const isETF=['URA','NLR','NUKZ'].includes(t);
+
+  // Live recalculate forward PEs
+  const liveMktCap = (() => {
+    if (!lv.mktCap || !p) return null;
+    const raw=lv.mktCap, num=parseFloat(raw);
+    const mult=raw.includes('T')?1e12:raw.includes('B')?1e9:raw.includes('M')?1e6:1;
+    return num*mult;
+  })();
+  const liveFwdPE  = (p && fin.fwdEpsEst  && fin.fwdEpsEst  > 0) ? p/fin.fwdEpsEst  : null;
+  const liveFwdPE2 = (p && fin.fwdEpsEst2 && fin.fwdEpsEst2 > 0) ? p/fin.fwdEpsEst2 : null;
+  const trailingPE = (p && fin.eps && fin.eps > 0) ? p/fin.eps : (fin.peTTM ?? lv.pe ?? null);
+
   const allV=[en.dcf_bear,en.dcf_base,en.dcf_bull,p].filter(v=>v!=null);
   const maxV=allV.length?Math.max(...allV)*1.08:200;
   function dRow(lbl,val,col){
@@ -968,22 +984,47 @@ function rValuation(t){
     return`<div class="dcfr"><span class="dcfl">${lbl}</span><div class="dcft"><div class="dcff" style="width:${w}%;background:${col}">$${Number(val).toFixed(0)}</div></div><span class="dcfu">${u!=null?`<span class="${u>=0?'pos':'neg'}">${u>=0?'+':''}${u.toFixed(0)}%</span>`:''}</span></div>`;
   }
   const pw=p?Math.min(97,(p/maxV)*100).toFixed(0):50;
+
+  // Build P/E table rows — only show rows with data
+  const peRows = [
+    {label:'P/E trailing (TTM)', val:trailingPE},
+    {label:`P/E fwd (${fin.fwdPeriod?fin.fwdPeriod.slice(0,7):'NTM'})`, val:liveFwdPE},
+    {label:`P/E fwd (${fin.fwdPeriod2?fin.fwdPeriod2.slice(0,7):'FY+2'})`, val:liveFwdPE2},
+    {label:'EV / EBITDA', val:fin.evEbitda},
+    {label:'Price / Sales', val:fin.ps ?? (liveMktCap && fin.revenue && fin.revenue>0 ? liveMktCap/fin.revenue : null)},
+    {label:'Price / Book', val:fin.pb},
+    {label:'PEG ratio', val:fin.pegRatio},
+  ].filter(r => r.val != null && isFinite(r.val));
+
   return`
     ${rChart(t)}
     <div class="shd">Valuation · live</div>
     <div class="kg">
       <div class="kv"><div class="kl">Market cap</div><div class="kval">${lv.mktCap||'<span class="na">N/A</span>'}</div></div>
-      <div class="kv"><div class="kl">P/E ratio</div><div class="kval">${lv.pe?lv.pe.toFixed(1)+'x':'<span class="na">N/A</span>'}</div></div>
+      <div class="kv"><div class="kl">P/E (trailing)</div><div class="kval">${peFmt(trailingPE)}</div></div>
     </div>
     <div class="kg">
       <div class="kv"><div class="kl">Prev close</div><div class="kval">${lv.prevClose?'$'+lv.prevClose.toFixed(2):'<span class="na">N/A</span>'}</div></div>
       <div class="kv"><div class="kl">Volume</div><div class="kval">${lv.vol||'<span class="na">N/A</span>'}</div></div>
     </div>
+
+    ${peRows.length > 0 && !isETF ? `
+    <div class="shd">P/E & multiples summary · live price</div>
+    <table class="ptbl">
+      <thead><tr><th>Multiple</th><th style="text-align:right">Value</th></tr></thead>
+      <tbody>
+        ${peRows.map(r=>`<tr><td>${r.label}</td><td>${r.val<0?'<span class="neg">Neg</span>':r.val>1000?'<span class="na">N/M</span>':r.val.toFixed(1)+'x'}</td></tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    ${!isETF ? `
     <div class="shd">DCF scenarios · WACC ${en.wacc}% · TGR ${en.tgr}%</div>
     <div class="dcfr"><span class="dcfl">Current</span><div class="dcft"><div class="dcff" style="width:${pw}%;background:#3a4455">${p?'$'+p.toFixed(2):'—'}</div></div><span class="dcfu"></span></div>
     ${dRow('Bear case',en.dcf_bear,'#7b1f1f')}
     ${dRow('Base case',en.dcf_base,'#1a3a6b')}
-    ${dRow('Bull case',en.dcf_bull,'#1a4a32')}`;
+    ${dRow('Bull case',en.dcf_bull,'#1a4a32')}` : `
+    <div class="shd">ETF info</div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.7">${en.en_note}</div>`}`;
 }
 
 function rCoverage(t){
@@ -1039,6 +1080,45 @@ const NEWS_SOURCES = {
     {label:'TD Securities Initiates BWXT Buy $230 — Insider Monkey',url:'https://finance.yahoo.com/sectors/energy/articles/td-securities-initiates-coverage-bwx-193259052.html'},
     {label:'BWXT Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
     {label:'BWXT Q4 Earnings — SEC 8-K',url:'https://www.sec.gov/Archives/edgar/data/0001486957/000148695726000005/bwxt_123125xerexhibit991.htm'},
+  ],
+  MIR:[
+    {label:'MIR Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/mir/forecast/'},
+    {label:'MIR Analyst Ratings — TipRanks',url:'https://www.tipranks.com/stocks/mir/forecast'},
+    {label:'Mirion FY2026 Earnings Guidance — Ticker Report',url:'https://www.tickerreport.com/banking-finance/13343171/mirion-technologies-nysemir-releases-fy-2026-earnings-guidance.html'},
+    {label:'MIR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/MIR/'},
+  ],
+  GHM:[
+    {label:'GHM Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/ghm/forecast/'},
+    {label:'GHM Analyst Ratings — TipRanks',url:'https://www.tipranks.com/stocks/ghm/forecast'},
+    {label:'GHM Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/GHM/'},
+  ],
+  NKLR:[
+    {label:'NKLR Company Overview — StockAnalysis',url:'https://stockanalysis.com/stocks/nklr/'},
+    {label:'Terra Innovatum SPAC Merger — Neutron Bytes',url:'https://neutronbytes.com/2025/10/03/terra-innovatum-its-sets-sights-on-230m-spac/'},
+    {label:'NKLR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/NKLR/'},
+  ],
+  IMSR:[
+    {label:'IMSR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/IMSR/'},
+    {label:'Terrestrial Energy Overview — StockInvest',url:'https://stockinvest.us/stock/IMSR'},
+  ],
+  SILXY:[
+    {label:'Silex Systems ADR — Nasdaq',url:'https://www.nasdaq.com/market-activity/stocks/silxy'},
+    {label:'SILXY Quote — CNBC',url:'https://www.cnbc.com/quotes/SILXY'},
+    {label:'Silex Systems Overview — Morningstar',url:'https://www.morningstar.com/stocks/pinx/silxy/quote'},
+  ],
+  URA:[
+    {label:'Global X Uranium ETF — ETF Database',url:'https://etfdb.com/etf/URA/'},
+    {label:'Best Nuclear ETFs 2026 — Motley Fool',url:'https://www.fool.com/investing/stock-market/market-sectors/energy/nuclear/nuclear-etfs/'},
+    {label:'URA Quote & Holdings — Yahoo Finance',url:'https://finance.yahoo.com/quote/URA/'},
+  ],
+  NLR:[
+    {label:'VanEck Uranium & Nuclear ETF — ETF Database',url:'https://etfdb.com/etf/NLR/'},
+    {label:'NLR Overview — StockAnalysis',url:'https://stockanalysis.com/etf/nlr/'},
+    {label:'NLR Quote & Holdings — Yahoo Finance',url:'https://finance.yahoo.com/quote/NLR/'},
+  ],
+  NUKZ:[
+    {label:'Range Nuclear Renaissance ETF — Yahoo Finance',url:'https://finance.yahoo.com/quote/NUKZ/'},
+    {label:'NUKZ vs URA vs NLR Comparison — ETF Trends',url:'https://www.etftrends.com/nuclear-energy-content-hub/'},
   ],
 };
 

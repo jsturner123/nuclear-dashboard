@@ -112,6 +112,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 .chart-btn:hover{color:var(--text);border-color:var(--border2);}
 .chart-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(79,142,247,.08);}
 .chart-container{position:relative;width:100%;height:80px;cursor:crosshair;}
+.cat-bar{padding:6px 22px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);}
+.cat-btn{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:2px;cursor:pointer;transition:all .12s;}
+.cat-btn:hover{color:var(--text);}
+.cat-btn.active{color:#fff;border-color:transparent;}
+.cat-hdr{grid-column:1/-1;padding:10px 4px 4px;font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;border-bottom:2px solid;margin-bottom:0;}
+
 .chart-svg{width:100%;height:80px;display:block;}
 .chart-tooltip{position:absolute;top:0;left:0;pointer-events:none;display:none;z-index:10;}
 .chart-tooltip-box{background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:4px 8px;white-space:nowrap;}
@@ -126,7 +132,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 <div class="header">
   <div>
     <h1>NUCLEAR EQUITY DASHBOARD</h1>
-    <p>OKLO · SMR · NNE · LEU · CCJ · LTBR · BWXT</p>
+    <p>OKLO · SMR · NNE · LEU · CCJ · LTBR · BWXT · MIR · GHM · NKLR · IMSR · SILXY · URA · NLR · NUKZ</p>
   </div>
   <div class="hdr-r">
     <span class="ts" id="ts">—</span>
@@ -137,6 +143,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 <div class="sbar">
   <div class="sdot dwarn" id="sdot"></div>
   <span id="smsg" style="color:var(--muted)">Initializing…</span>
+</div>
+
+<div class="cat-bar">
+  <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-right:4px">SECTOR:</span>
+  <button class="cat-btn active" style="background:#4f8ef7;border-color:#4f8ef7" onclick="setCat('all',this)">All</button>
+  <button class="cat-btn" onclick="setCat('industrials',this)">Nuclear Industrials</button>
+  <button class="cat-btn" onclick="setCat('smr',this)">SMR Developers</button>
+  <button class="cat-btn" onclick="setCat('fuel',this)">Fuel & Enrichment</button>
+  <button class="cat-btn" onclick="setCat('etf',this)">ETFs & Funds</button>
 </div>
 
 <div class="ctrl">
@@ -168,10 +183,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 const KEY  = 'uhj6YB5Di0arJLuib4e6SfqgDKa3d1II';
 const BASE = 'https://financialmodelingprep.com/stable';
 
-const TICKERS = ['OKLO','SMR','NNE','LEU','CCJ','LTBR','BWXT'];
+const TICKERS = ['OKLO','SMR','NNE','LEU','CCJ','LTBR','BWXT','MIR','GHM','NKLR','IMSR','SILXY','URA','NLR','NUKZ'];
 const NAMES = {
   OKLO:'Oklo Inc.',SMR:'NuScale Power',NNE:'Nano Nuclear Energy',
-  LEU:'Centrus Energy',CCJ:'Cameco Corp.',LTBR:'Lightbridge Corp.',BWXT:'BWX Technologies'
+  LEU:'Centrus Energy',CCJ:'Cameco Corp.',LTBR:'Lightbridge Corp.',BWXT:'BWX Technologies',
+  MIR:'Mirion Technologies',GHM:'Graham Corp.',NKLR:'Terra Innovatum',
+  IMSR:'Terrestrial Energy',SILXY:'Silex Systems ADR',
+  URA:'Global X Uranium ETF',NLR:'VanEck Uranium & Nuclear ETF',NUKZ:'Range Nuclear ETF'
 };
 const EN = {
   OKLO:{rating:'Buy',pt_consensus:102,pt_low:65,pt_high:150,analyst_count:14,
@@ -258,10 +276,96 @@ const EN = {
       'TD Securities initiated Buy with $230 PT on Mar 12, calling BWXT\'s model "very attractive" with strong nuclear heritage and multiple growth vectors.',
       'FY26 guidance: EPS $4.55–$4.70 (vs $4.30 est.) and revenue ~$3.75B (vs $3.67B est.); backlog grew 50% in 2025 to $7.4B.',
       'Kinectrics (BWXT division) selected as design/fabrication partner for UK Atomic Energy Authority\'s H3AT facility (Mar 16, 2026).'
+    ]},
+  MIR:{rating:'Buy',pt_consensus:29,pt_low:22,pt_high:34,analyst_count:7,
+    cov:[
+      {firm:'Baird',rating:'Buy',target:29,date:'Mar 2026',url:'https://stockanalysis.com/stocks/mir/forecast/'},
+      {firm:'B. Riley',rating:'Buy',target:29,date:'Feb 2026',url:'https://www.tipranks.com/stocks/mir/forecast'},
+      {firm:'J.P. Morgan',rating:'Buy',target:30,date:'Feb 2026',url:'https://www.tipranks.com/stocks/mir/forecast'},
+      {firm:'Morgan Stanley',rating:'Hold',target:28,date:'Jan 2026',url:'https://stockanalysis.com/stocks/mir/forecast/'},
+    ],
+    dcf_bear:18,dcf_base:29,dcf_bull:38,wacc:9,tgr:2,er:'beat',en_note:'Q4 2025: $0.12 vs $0.10E (+20%); nuclear power segment +17.6% YoY',es:20,
+    news:[
+      'Nuclear Power segment grew 17.6% year-over-year in Q4 2025, driven by strong demand for radiation measurement and monitoring solutions.',
+      'Morgan Stanley initiated coverage with Equal Weight at $28 (Jan 23, 2026); 7 analysts cover with Strong Buy consensus and avg PT of $29.57.',
+      'Next earnings May 6, 2026; serves nuclear utilities, defense, labs, and medical radiation therapy markets globally.'
+    ]},
+  GHM:{rating:'Buy',pt_consensus:75,pt_low:55,pt_high:100,analyst_count:3,
+    cov:[
+      {firm:'Maxim Group',rating:'Buy',target:80,date:'Mar 2026',url:'https://stockanalysis.com/stocks/ghm/forecast/'},
+      {firm:'Oak Ridge Financial',rating:'Buy',target:71,date:'Feb 2026',url:'https://www.tipranks.com/stocks/ghm/forecast'},
+    ],
+    dcf_bear:55,dcf_base:75,dcf_bull:100,wacc:10,tgr:2,er:'beat',en_note:'FY2025: revenue $209.9M (+13%); earnings +168% YoY',es:null,
+    news:[
+      'Strong Buy consensus from 3 analysts; avg PT $73-75 range. Revenue grew 13% in FY2025 with earnings up 168% year-over-year.',
+      'Defense and space segments driving order growth; Maxim raised PT to $80 citing earlier and larger orders from space industry.',
+      'Manufactures mission-critical fluid, heat transfer, and vacuum technologies for defense, space, and nuclear energy sectors.'
+    ]},
+  NKLR:{rating:'Buy',pt_consensus:15,pt_low:10,pt_high:20,analyst_count:3,
+    cov:[
+      {firm:'H.C. Wainwright',rating:'Buy',target:15,date:'Feb 2026',url:'https://stockanalysis.com/stocks/nklr/'},
+    ],
+    dcf_bear:3,dcf_base:10,dcf_bull:20,wacc:15,tgr:4,er:'miss',en_note:'Pre-revenue; developing SOLO 1 MWe micro-modular reactor',es:null,
+    news:[
+      'Formerly GIG (Hadron Energy); completed SPAC merger to list as NKLR (Terra Innovatum) on NASDAQ. Develops SOLO micro-modular reactor (1 MWe).',
+      'Strong Buy from 3 analysts, avg PT $15 implying ~200% upside. Pre-revenue; reactor designed for industrial heat and remote power applications.',
+      'Signed manufacturing agreement with ATB Riva Calzoni to establish SOLO production processes (Oct 2025); DOE Reactor Pilot Program applicant.'
+    ]},
+  IMSR:{rating:'Hold',pt_consensus:8,pt_low:5,pt_high:12,analyst_count:2,
+    cov:[],
+    dcf_bear:3,dcf_base:8,dcf_bull:18,wacc:14,tgr:3,er:'miss',en_note:'Pre-revenue; developing Integral Molten Salt Reactor (IMSR)',es:null,
+    news:[
+      'Terrestrial Energy developing the Integral Molten Salt Reactor (IMSR), targeting industrial heat and power markets. Pre-revenue.',
+      '52-week range $5.95-$21.60; stock has pulled back significantly from highs. Market cap ~$550M. Listed on NASDAQ.',
+      'Participating in DOE fuel supply chain discussions; molten salt technology offers potential cost and safety advantages over conventional SMRs.'
+    ]},
+  SILXY:{rating:'Hold',pt_consensus:14,pt_low:10,pt_high:18,analyst_count:2,
+    cov:[],
+    dcf_bear:8,dcf_base:14,dcf_bull:22,wacc:12,tgr:3,er:'inline',en_note:'Developing SILEX laser uranium enrichment technology; pre-revenue',es:null,
+    news:[
+      'Australian company developing SILEX laser-based uranium enrichment technology — a potential next-generation alternative to centrifuge enrichment.',
+      'ADR (OTC: SILXY) for U.S. investors; primary listing on ASX. 52-week range $8.25-$20.40. No formal U.S. analyst coverage currently.',
+      'Technology applicable to uranium enrichment, silicon enrichment for quantum computing, and medical isotope production.'
+    ]},
+  URA:{rating:'Buy',pt_consensus:null,pt_low:null,pt_high:null,analyst_count:0,
+    cov:[],
+    dcf_bear:null,dcf_base:null,dcf_bull:null,wacc:null,tgr:null,er:'inline',en_note:'ETF: 50+ holdings, 0.69% expense ratio, $7.4B AUM',es:null,
+    news:[
+      'Global X Uranium ETF (URA) — broad exposure to uranium miners, nuclear component makers, and nuclear services. 50+ holdings, $7.4B in AUM.',
+      'Top holdings include Cameco (CCJ), NexGen Energy, Sprott Physical Uranium Trust, and Kazatomprom. 65.5% energy stocks, rest industrials/utilities.',
+      '1-year return +83%; expense ratio 0.69%. Closest alternative to NLR for pure-play uranium/nuclear sector exposure.'
+    ]},
+  NLR:{rating:'Buy',pt_consensus:null,pt_low:null,pt_high:null,analyst_count:0,
+    cov:[],
+    dcf_bear:null,dcf_base:null,dcf_bull:null,wacc:null,tgr:null,er:'inline',en_note:'ETF: 28 holdings, 0.56% expense ratio, income-generating',es:null,
+    news:[
+      'VanEck Uranium and Nuclear ETF (NLR) — 28 holdings across uranium miners, nuclear utilities, and reactor developers. Global exposure.',
+      'Top holdings include Cameco, Constellation Energy, BWX Technologies, and Centrus. Lower expense ratio (0.56%) vs URA; pays annual distributions.',
+      '1-year return +60%; 30-day SEC yield ~0.55%. Strong 3-month inflows of $820M signal institutional accumulation in nuclear sector.'
+    ]},
+  NUKZ:{rating:'Buy',pt_consensus:null,pt_low:null,pt_high:null,analyst_count:0,
+    cov:[],
+    dcf_bear:null,dcf_base:null,dcf_bull:null,wacc:null,tgr:null,er:'inline',en_note:'ETF: Range Nuclear Renaissance Index, focused SMR/advanced nuclear',es:null,
+    news:[
+      'Range Nuclear Renaissance ETF (NUKZ) — tracks the VettaFi Nuclear Renaissance Index with concentrated exposure to advanced nuclear and SMR developers.',
+      'Heavier weighting to pre-revenue SMR developers vs NLR and URA; includes OKLO, NuScale, and other emerging nuclear names.',
+      '1-year return +57%. Higher risk/reward profile than NLR due to greater concentration in pre-revenue advanced nuclear companies.'
     ]}
 };
 
-let live={}, sortKey='ticker', activeTab='overview';
+let live={}, sortKey='ticker', activeTab='overview', activeCat='all';
+
+// Category definitions
+const CATS = {
+  industrials: { label:'Nuclear Industrials', color:'#4f8ef7', tickers:['BWXT','MIR','GHM'] },
+  smr:         { label:'SMR & Micro-Reactor Developers', color:'#3dd68c', tickers:['OKLO','SMR','NNE','NKLR','IMSR'] },
+  fuel:        { label:'Fuel, Enrichment & Uranium', color:'#f7c94f', tickers:['LEU','CCJ','LTBR','SILXY'] },
+  etf:         { label:'ETFs & Funds', color:'#a78bfa', tickers:['URA','NLR','NUKZ'] },
+};
+
+// Map each ticker to its category
+const TICKER_CAT = {};
+Object.entries(CATS).forEach(([key, cat]) => cat.tickers.forEach(t => TICKER_CAT[t] = key));
 
 const toYMD = d => d.toISOString().split('T')[0];
 const daysAgo = n => toYMD(new Date(Date.now()-n*86400000));
@@ -359,7 +463,7 @@ async function fetchTicker(ticker) {
 /* ── FETCH FINANCIALS (called on-demand when tab opened) ── */
 const finCache = {};
 // Pre-revenue / startup tickers — show cash burn instead of profit multiples
-const STARTUPS = ['OKLO','SMR','NNE','LTBR'];
+const STARTUPS = ['OKLO','SMR','NNE','LTBR','NKLR','IMSR','SILXY'];
 
 async function fetchFinancials(ticker) {
   if (finCache[ticker]) return finCache[ticker];
@@ -616,10 +720,10 @@ async function loadAll(){
   if(ok===TICKERS.length){
     const hasReturns = TICKERS.some(t=>live[t]?.wk1Pct!=null);
     setStatus('ok', hasReturns
-      ? 'All 7 tickers loaded with full returns · '+new Date().toLocaleDateString()
+      ? 'All 15 tickers loaded with full returns · '+new Date().toLocaleDateString()
       : 'Prices loaded · Historical returns unavailable (check FMP plan includes historical data)');
   }
-  else if(ok>0) setStatus('warn',`${ok}/7 loaded · Failed: ${failed.join(', ')}`);
+  else if(ok>0) setStatus('warn',`${ok}/15 loaded · Failed: ${failed.join(', ')}`);
   else setStatus('err','Failed: '+(live[TICKERS[0]]?.msg||'unknown'));
 }
 
@@ -826,6 +930,7 @@ function setChartRange(ticker, range, btn) {
 
 function rOverview(t){
   const lv=live[t]||{},en=EN[t],p=lv.price;
+  const isETF = ['URA','NLR','NUKZ'].includes(t);
   const up=en.pt_consensus&&p?((en.pt_consensus-p)/p*100):null;
   const tp=(en.pt_low!=null&&en.pt_high!=null&&p&&en.pt_high!==en.pt_low)
     ?Math.min(96,Math.max(4,((p-en.pt_low)/(en.pt_high-en.pt_low))*100)):50;
@@ -839,6 +944,7 @@ function rOverview(t){
         <td>${ps(lv.wk1Pct)}</td><td>${ps(lv.mo1Pct)}</td><td>${ps(lv.ytdPct)}</td><td>${ps(lv.yr1Pct)}</td><td>${ps(lv.yr3Pct)}</td><td>${ps(lv.yr5Pct)}</td>
       </tr></tbody>
     </table>
+    ${isETF ? `<div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);padding:4px 0">${en.en_note}</div>` : `
     <div class="shd">Analyst consensus · ${en.analyst_count} analysts</div>
     <div class="ptcr">${rPill(en.rating)}<span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">PT $${en.pt_consensus} ${up!==null?'('+ps(up)+')':''}</span></div>
     <div class="ptbw">
@@ -847,7 +953,8 @@ function rOverview(t){
     </div>
     <div class="shd">Most recent earnings</div>
     <div>${ePill(en.er,en.en_note)}</div>
-    ${en.es!=null?`<div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:4px">EPS surprise: ${ps(en.es)}</div>`:''}`;
+    ${en.es!=null?`<div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:4px">EPS surprise: ${ps(en.es)}</div>`:''}
+    `}`;
 }
 
 function rValuation(t){
@@ -1162,7 +1269,46 @@ function sortedT(){
   });
 }
 
-function renderGrid(){ document.getElementById('grid').innerHTML=sortedT().map(renderCard).join(''); }
+function renderGrid(){
+  const grid = document.getElementById('grid');
+
+  if (activeCat !== 'all') {
+    // Single category — no section headers, just sort within category
+    const catTickers = CATS[activeCat].tickers;
+    const sorted = sortedT().filter(t => catTickers.includes(t));
+    grid.innerHTML = sorted.map(renderCard).join('');
+    return;
+  }
+
+  // All — render each category as a group with a colored section header
+  let html = '';
+  Object.entries(CATS).forEach(([key, cat]) => {
+    const sorted = sortedT().filter(t => cat.tickers.includes(t));
+    if (!sorted.length) return;
+    html += `<div class="cat-hdr" style="color:${cat.color};border-color:${cat.color}20">
+      <span style="background:${cat.color}18;padding:3px 10px;border-radius:2px;border:1px solid ${cat.color}30">${cat.label}</span>
+    </div>`;
+    html += sorted.map(renderCard).join('');
+  });
+  grid.innerHTML = html;
+}
+
+function setCat(cat, btn) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = 'transparent';
+    b.style.borderColor = '';
+    b.style.color = '';
+  });
+  btn.classList.add('active');
+  // Color each category button distinctly
+  const colors = { all:'#4f8ef7', industrials:'#4f8ef7', smr:'#3dd68c', fuel:'#f7c94f', etf:'#a78bfa' };
+  btn.style.background = colors[cat] || '#4f8ef7';
+  btn.style.borderColor = colors[cat] || '#4f8ef7';
+  btn.style.color = '#fff';
+  renderGrid();
+}
 function setTab(tab,el){
   activeTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));

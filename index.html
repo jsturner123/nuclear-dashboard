@@ -195,9 +195,10 @@ const EN = {
   OKLO:{rating:'Buy',pt_consensus:102,pt_low:65,pt_high:150,analyst_count:14,
     cov:[
       {firm:'Cantor Fitzgerald',rating:'Buy',target:125,date:'Mar 2026',url:'https://stockanalysis.com/stocks/oklo/forecast/'},
-      {firm:'B. Riley',rating:'Buy',target:92,date:'Mar 2026',url:'https://finance.yahoo.com/sectors/energy/articles/goldman-sachs-lowers-price-target-193308222.html'},
-      {firm:'Citi',rating:'Neutral',target:73,date:'Mar 2026',url:'https://www.tipranks.com/stocks/oklo/forecast'},
-      {firm:'Goldman Sachs',rating:'Neutral',target:65,date:'Mar 2026',url:'https://finance.yahoo.com/sectors/energy/articles/goldman-sachs-lowers-price-target-193308222.html'},
+      {firm:'B. Riley',rating:'Buy',target:92,date:'Mar 2026',url:'https://stockanalysis.com/stocks/oklo/forecast/'},
+      {firm:'Citi',rating:'Hold',target:74,date:'Mar 2026',url:'https://www.tipranks.com/stocks/oklo/forecast'},
+      {firm:'Goldman Sachs',rating:'Hold',target:65,date:'Mar 2026',url:'https://stockanalysis.com/stocks/oklo/forecast/'},
+      {firm:'BofA Securities',rating:'Buy',target:127,date:'Jan 2026',url:'https://stockanalysis.com/stocks/oklo/forecast/'},
     ],
     dcf_bear:35,dcf_base:95,dcf_bull:180,wacc:10,tgr:3,er:'miss',en_note:'FY2025: -$0.72 vs -$0.62E; op. expenses $139M vs $52M prior year',es:-16,
     news:[
@@ -205,36 +206,42 @@ const EN = {
       'Goldman Sachs cut PT to $65 (Neutral) citing higher capex of $350M–$450M for 2026; B. Riley cut to $92 (Buy); Citi cut to $73.50 (Mar 18, 2026).',
       'Liquidity increased to ~$2.6B after Q1 capital raise; first Aurora reactor now targeted for 2028; Meta deal for 1.2 GW Ohio campus intact.'
     ]},
-  SMR:{rating:'Hold',pt_consensus:20,pt_low:11,pt_high:41,analyst_count:9,
+  SMR:{rating:'Hold',pt_consensus:21,pt_low:12,pt_high:60,analyst_count:9,
     cov:[
-      {firm:'Canaccord Genuity',rating:'Buy',target:60,date:'Mar 2026',url:'https://tickernerd.com/stock/smr-forecast/'},
+      {firm:'Canaccord Genuity',rating:'Buy',target:25,date:'Mar 2026',url:'https://tickernerd.com/stock/smr-forecast/'},
+      {firm:'Northland',rating:'Buy',target:41,date:'Mar 2026',url:'https://www.tipranks.com/stocks/smr/forecast'},
+      {firm:'Goldman Sachs',rating:'Hold',target:14,date:'Mar 2026',url:'https://www.tipranks.com/stocks/smr/forecast'},
       {firm:'Barclays',rating:'Hold',target:15,date:'Mar 2026',url:'https://tickernerd.com/stock/smr-forecast/'},
-      {firm:'B. Riley',rating:'Hold',target:8,date:'Feb 2026',url:'https://stockanalysis.com/stocks/smr/forecast/'},
+      {firm:'UBS',rating:'Hold',target:13,date:'Mar 2026',url:'https://www.tipranks.com/stocks/smr/forecast'},
+      {firm:'B. Riley',rating:'Hold',target:24,date:'Feb 2026',url:'https://stockanalysis.com/stocks/smr/forecast/'},
     ],
     dcf_bear:2,dcf_base:7,dcf_bull:18,wacc:12,tgr:3,er:'miss',en_note:'Q4 2025: EPS -742% surprise, rev -75% vs est.',es:-742,
     news:[
       'Fluor Corp sold 71M shares of SMR stock on Feb 13, 2026 for ~$1.35B, reducing holdings from 111.4M to 40.4M shares — significant insider reduction.',
-      'Stock has fallen ~75% from October 2025 highs; consensus Hold with avg PT of $20.50 implying ~57% upside from current levels.',
+      'Stock has fallen ~75% from October 2025 highs; consensus Hold with avg PT ~$21 implying ~57% upside from current levels.',
       'NuScale holds sole U.S. NRC design certification for an SMR; partnered with Oak Ridge National Lab on AI-enabled nuclear design framework (Feb 2026).'
     ]},
-  NNE:{rating:'Buy',pt_consensus:22,pt_low:10,pt_high:35,analyst_count:4,
+  NNE:{rating:'Buy',pt_consensus:47,pt_low:9,pt_high:50,analyst_count:4,
     cov:[
-      {firm:'Maxim Group',rating:'Buy',target:35,date:'Jan 2026',url:'https://stockanalysis.com/stocks/nne/forecast/'},
-      {firm:'H.C. Wainwright',rating:'Buy',target:25,date:'Dec 2025',url:'https://stockanalysis.com/stocks/nne/forecast/'},
+      {firm:'H.C. Wainwright',rating:'Buy',target:50,date:'Aug 2025',url:'https://stockanalysis.com/stocks/nne/forecast/'},
+      {firm:'Texas Capital',rating:'Buy',target:45,date:'Mar 2026',url:'https://www.tipranks.com/stocks/nne/forecast'},
+      {firm:'BTIG',rating:'Hold',target:null,date:'Aug 2025',url:'https://www.tipranks.com/stocks/nne/forecast'},
+      {firm:'Ladenburg Thalmann',rating:'Sell',target:9,date:'Aug 2025',url:'https://www.benzinga.com/quote/NNE/analyst-ratings'},
     ],
-    dcf_bear:5,dcf_base:18,dcf_bull:40,wacc:13,tgr:4,er:'miss',en_note:'EPS -$0.57 vs -$0.32E (pre-revenue company)',es:-78,
+    dcf_bear:5,dcf_base:18,dcf_bull:50,wacc:13,tgr:4,er:'miss',en_note:'EPS -$0.57 vs -$0.32E (pre-revenue company)',es:-78,
     news:[
-      'No new analyst actions or material company news this week (Mar 26, 2026).',
-      'Advancing ZEUS and ODIN micro-reactor designs; remains pre-revenue with stock driven by broader nuclear sector sentiment.',
-      'Named to multiple nuclear innovation watchlists for 2026; cash burn rate remains primary analyst focus.'
+      'H.C. Wainwright reiterated Buy with $50 PT (Aug 2025), citing KRONOS reactor regulatory progress; Texas Capital initiated Buy in Mar 2026.',
+      'Company raised ~$400M private placement in early 2026, boosting cash to $577.5M. Advancing ZEUS and KRONOS micro-reactor designs.',
+      'Named to multiple nuclear innovation watchlists for 2026; next earnings Q2 2026. Cash burn rate remains primary analyst focus.'
     ]},
-  LEU:{rating:'Buy',pt_consensus:85,pt_low:55,pt_high:110,analyst_count:5,
+  LEU:{rating:'Buy',pt_consensus:298,pt_low:125,pt_high:390,analyst_count:12,
     cov:[
-      {firm:'B. Riley',rating:'Buy',target:110,date:'Feb 2026',url:'https://stockanalysis.com/stocks/leu/forecast/'},
-      {firm:'Lake Street',rating:'Buy',target:90,date:'Jan 2026',url:'https://stockanalysis.com/stocks/leu/forecast/'},
-      {firm:'Northland',rating:'Buy',target:75,date:'Dec 2025',url:'https://stockanalysis.com/stocks/leu/forecast/'},
+      {firm:'B. Riley',rating:'Buy',target:315,date:'Mar 2026',url:'https://www.tipranks.com/stocks/leu/forecast'},
+      {firm:'H.C. Wainwright',rating:'Buy',target:300,date:'Mar 2026',url:'https://stockanalysis.com/stocks/leu/forecast/'},
+      {firm:'UBS',rating:'Buy',target:null,date:'Mar 2026',url:'https://www.tipranks.com/stocks/leu/forecast'},
+      {firm:'Roth Capital',rating:'Buy',target:125,date:'Mar 2026',url:'https://www.tipranks.com/stocks/leu/forecast'},
     ],
-    dcf_bear:45,dcf_base:80,dcf_bull:130,wacc:9,tgr:2,er:'miss',en_note:'Q4 2025: $0.79 vs $1.41E (-44%); revenue $146.2M slightly below consensus',es:-44,
+    dcf_bear:125,dcf_base:298,dcf_bull:390,wacc:9,tgr:2,er:'miss',en_note:'Q4 2025: $0.79 vs $1.41E (-44%); revenue $146.2M slightly below consensus',es:-44,
     news:[
       'Motley Fool (Mar 24) notes Centrus is one of only 2 nuclear stocks with positive GAAP profits AND positive free cash flow; analysts project EPS of $5.30 by 2027.',
       'HALEU JV discussions with Oklo at Piketon, Ohio remain the key near-term catalyst; Centrus is the only US-licensed HALEU enrichment facility.',
@@ -251,7 +258,7 @@ const EN = {
     news:[
       'Motley Fool (Mar 24) calls Cameco the better buy vs Centrus: cheaper valuation, stronger FCF, and analysts expect EPS to nearly double to $1.89 by 2027.',
       'Signed 9-year uranium supply agreement with India\'s Dept. of Atomic Energy for ~22M lbs of uranium concentrate (Mar 2, 2026).',
-      'Next earnings due May 1, 2026; 52-week range $35–$135; currently trading ~$101, Strong Buy consensus with avg PT $123.92 per 7 analysts.'
+      'Next earnings due Apr 30, 2026; 52-week range $35–$135; Strong Buy consensus with avg PT $136 per 7 analysts.'
     ]},
   LTBR:{rating:'Buy',pt_consensus:18,pt_low:8,pt_high:28,analyst_count:3,
     cov:[
@@ -264,14 +271,15 @@ const EN = {
       'FY2025 10-K (Feb 25, 2026) confirmed $201.9M cash balance providing significant runway; higher R&D and G&A expenses year-over-year.',
       'Fuel irradiation testing at Idaho National Laboratory under ADVANCE Act framework remains the key near-term regulatory milestone.'
     ]},
-  BWXT:{rating:'Buy',pt_consensus:208,pt_low:177,pt_high:235,analyst_count:10,
+  BWXT:{rating:'Buy',pt_consensus:223,pt_low:177,pt_high:235,analyst_count:10,
     cov:[
-      {firm:'TD Securities',rating:'Buy',target:230,date:'Mar 2026',url:'https://finance.yahoo.com/sectors/energy/articles/td-securities-initiates-coverage-bwx-193259052.html'},
+      {firm:'BTIG',rating:'Buy',target:235,date:'Feb 2026',url:'https://www.benzinga.com/quote/BWXT/analyst-ratings'},
+      {firm:'BofA Securities',rating:'Buy',target:225,date:'Nov 2025',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
+      {firm:'TD Securities',rating:'Buy',target:230,date:'Mar 2026',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
       {firm:'Baird',rating:'Buy',target:215,date:'Feb 2026',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
-      {firm:'Morgan Stanley',rating:'Buy',target:210,date:'Feb 2026',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
-      {firm:'Goldman Sachs',rating:'Buy',target:203,date:'Feb 2026',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
+      {firm:'Wells Fargo',rating:'Buy',target:220,date:'Feb 2026',url:'https://www.tipranks.com/stocks/bwxt/forecast'},
     ],
-    dcf_bear:177,dcf_base:208,dcf_bull:290,wacc:8,tgr:2,er:'beat',en_note:'Q4 2025: $1.08 vs $0.88E (+23%); revenue $885.8M vs $837.5M est.',es:23,
+    dcf_bear:177,dcf_base:223,dcf_bull:290,wacc:8,tgr:2,er:'beat',en_note:'Q4 2025: $1.08 vs $0.88E (+23%); revenue $885.8M vs $837.5M est.',es:23,
     news:[
       'TD Securities initiated Buy with $230 PT on Mar 12, calling BWXT\'s model "very attractive" with strong nuclear heritage and multiple growth vectors.',
       'FY26 guidance: EPS $4.55–$4.70 (vs $4.30 est.) and revenue ~$3.75B (vs $3.67B est.); backlog grew 50% in 2025 to $7.4B.',
@@ -283,11 +291,12 @@ const EN = {
       {firm:'B. Riley',rating:'Buy',target:29,date:'Feb 2026',url:'https://www.tipranks.com/stocks/mir/forecast'},
       {firm:'J.P. Morgan',rating:'Buy',target:30,date:'Feb 2026',url:'https://www.tipranks.com/stocks/mir/forecast'},
       {firm:'Morgan Stanley',rating:'Hold',target:28,date:'Jan 2026',url:'https://stockanalysis.com/stocks/mir/forecast/'},
+      {firm:'Northland',rating:'Buy',target:29,date:'Feb 2026',url:'https://stockanalysis.com/stocks/mir/forecast/'},
     ],
     dcf_bear:18,dcf_base:29,dcf_bull:38,wacc:9,tgr:2,er:'beat',en_note:'Q4 2025: $0.12 vs $0.10E (+20%); nuclear power segment +17.6% YoY',es:20,
     news:[
       'Nuclear Power segment grew 17.6% year-over-year in Q4 2025, driven by strong demand for radiation measurement and monitoring solutions.',
-      'Morgan Stanley initiated coverage with Equal Weight at $28 (Jan 23, 2026); 7 analysts cover with Strong Buy consensus and avg PT of $29.57.',
+      'Morgan Stanley initiated coverage with Equal Weight at $28 (Jan 23, 2026); FY2026 guidance $0.50–$0.57 EPS above prior consensus.',
       'Next earnings May 6, 2026; serves nuclear utilities, defense, labs, and medical radiation therapy markets globally.'
     ]},
   GHM:{rating:'Buy',pt_consensus:75,pt_low:55,pt_high:100,analyst_count:3,
@@ -297,7 +306,7 @@ const EN = {
     ],
     dcf_bear:55,dcf_base:75,dcf_bull:100,wacc:10,tgr:2,er:'beat',en_note:'FY2025: revenue $209.9M (+13%); earnings +168% YoY',es:null,
     news:[
-      'Strong Buy consensus from 3 analysts; avg PT $73-75 range. Revenue grew 13% in FY2025 with earnings up 168% year-over-year.',
+      'Strong Buy consensus from 3 analysts; avg PT $73–75 range. Revenue grew 13% in FY2025 with earnings up 168% year-over-year.',
       'Defense and space segments driving order growth; Maxim raised PT to $80 citing earlier and larger orders from space industry.',
       'Manufactures mission-critical fluid, heat transfer, and vacuum technologies for defense, space, and nuclear energy sectors.'
     ]},
@@ -316,7 +325,7 @@ const EN = {
     dcf_bear:3,dcf_base:8,dcf_bull:18,wacc:14,tgr:3,er:'miss',en_note:'Pre-revenue; developing Integral Molten Salt Reactor (IMSR)',es:null,
     news:[
       'Terrestrial Energy developing the Integral Molten Salt Reactor (IMSR), targeting industrial heat and power markets. Pre-revenue.',
-      '52-week range $5.95-$21.60; stock has pulled back significantly from highs. Market cap ~$550M. Listed on NASDAQ.',
+      '52-week range $5.95–$21.60; stock has pulled back significantly from highs. Market cap ~$550M. Listed on NASDAQ.',
       'Participating in DOE fuel supply chain discussions; molten salt technology offers potential cost and safety advantages over conventional SMRs.'
     ]},
   SILXY:{rating:'Hold',pt_consensus:14,pt_low:10,pt_high:18,analyst_count:2,
@@ -324,7 +333,7 @@ const EN = {
     dcf_bear:8,dcf_base:14,dcf_bull:22,wacc:12,tgr:3,er:'inline',en_note:'Developing SILEX laser uranium enrichment technology; pre-revenue',es:null,
     news:[
       'Australian company developing SILEX laser-based uranium enrichment technology — a potential next-generation alternative to centrifuge enrichment.',
-      'ADR (OTC: SILXY) for U.S. investors; primary listing on ASX. 52-week range $8.25-$20.40. No formal U.S. analyst coverage currently.',
+      'ADR (OTC: SILXY) for U.S. investors; primary listing on ASX. 52-week range $8.25–$20.40. No formal U.S. analyst coverage currently.',
       'Technology applicable to uranium enrichment, silicon enrichment for quantum computing, and medical isotope production.'
     ]},
   URA:{rating:'Buy',pt_consensus:null,pt_low:null,pt_high:null,analyst_count:0,
@@ -702,6 +711,9 @@ async function loadAll(){
   const btn=document.getElementById('rbtn'), pf=document.getElementById('pf');
   btn.disabled=true; btn.innerHTML='<span class="sp"></span>Loading';
   pf.style.width='0%'; live={}; renderGrid();
+  // Clear caches so everything refreshes
+  Object.keys(finCache).forEach(k=>delete finCache[k]);
+  Object.keys(analystCache).forEach(k=>delete analystCache[k]);
   setStatus('warn','Fetching live data…');
 
   let done=0, ok=0;
@@ -1027,19 +1039,123 @@ function rValuation(t){
     <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.7">${en.en_note}</div>`}`;
 }
 
+/* ── ANALYST COVERAGE CACHE ─────────────────────────── */
+const analystCache = {};
+
+async function fetchAnalystCoverage(ticker) {
+  if (analystCache[ticker]) return analystCache[ticker];
+  const result = { consensus: null, ptHigh: null, ptLow: null, ptMedian: null, analystCount: null, grades: [] };
+
+  // 1. Price target consensus
+  try {
+    const d = await fmpGet(`/price-target-consensus?symbol=${ticker}`);
+    const r = Array.isArray(d) ? d[0] : d;
+    if (r) {
+      result.consensus   = r.targetConsensus ?? r.priceTargetAverage ?? null;
+      result.ptHigh      = r.targetHigh      ?? r.priceTargetHigh    ?? null;
+      result.ptLow       = r.targetLow       ?? r.priceTargetLow     ?? null;
+      result.ptMedian    = r.targetMedian    ?? null;
+    }
+  } catch(e) {}
+
+  // 2. Individual analyst price targets (most recent 12)
+  try {
+    const d = await fmpGet(`/price-target?symbol=${ticker}&limit=12`);
+    const rows = Array.isArray(d) ? d : [];
+    if (rows.length > 0) {
+      // Deduplicate: keep most recent per analyst firm
+      const seen = new Set();
+      result.grades = rows
+        .filter(r => {
+          const key = (r.analystCompany || r.analyst || '').toLowerCase().trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 8)
+        .map(r => ({
+          firm:   r.analystCompany || r.analyst || 'Unknown',
+          rating: r.priceTargetRating ?? null,
+          target: r.priceTarget ?? null,
+          date:   r.publishedDate ? r.publishedDate.slice(0, 7) : null,
+          url:    null
+        }));
+      // Derive analyst count
+      if (!result.analystCount) result.analystCount = rows.length;
+    }
+  } catch(e) {}
+
+  // 3. Grades summary for consensus rating + count
+  try {
+    const d = await fmpGet(`/grades-summary?symbol=${ticker}`);
+    const r = Array.isArray(d) ? d[0] : d;
+    if (r) {
+      const total = (r.strongBuy||0)+(r.buy||0)+(r.hold||0)+(r.sell||0)+(r.strongSell||0);
+      if (total > 0) result.analystCount = total;
+      // Derive consensus label
+      const buys = (r.strongBuy||0)+(r.buy||0);
+      const sells = (r.sell||0)+(r.strongSell||0);
+      const holds = r.hold||0;
+      if (buys >= sells+holds*0.6) result.consensusRating = 'Buy';
+      else if (sells > buys) result.consensusRating = 'Sell';
+      else result.consensusRating = 'Hold';
+    }
+  } catch(e) {}
+
+  analystCache[ticker] = result;
+  return result;
+}
+
 function rCoverage(t){
-  const en=EN[t],p=live[t]?.price;
+  const en=EN[t], p=live[t]?.price;
+  const isETF=['URA','NLR','NUKZ'].includes(t);
+  const ac = analystCache[t];
+
+  // Use live data if available, fall back to EN hardcoded
+  const consensus   = ac?.consensus    ?? en.pt_consensus;
+  const ptHigh      = ac?.ptHigh       ?? en.pt_high;
+  const ptLow       = ac?.ptLow        ?? en.pt_low;
+  const analystCount= ac?.analystCount ?? en.analyst_count;
+  const rating      = ac?.consensusRating ?? en.rating;
+  const grades      = ac?.grades?.length ? ac.grades : en.cov;
+  const isLive      = !!(ac?.grades?.length);
+
+  if (isETF) {
+    return`<div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.8;padding:4px 0">${en.en_note}<br>No individual analyst ratings for ETFs.</div>
+    <div style="margin-top:10px"><div class="shd">Earnings / Info</div>${ePill(en.er,en.en_note)}</div>`;
+  }
+
+  const up = consensus&&p ? ((consensus-p)/p*100) : null;
+  const tp = (ptLow!=null&&ptHigh!=null&&p&&ptHigh!==ptLow)
+    ? Math.min(96,Math.max(4,((p-ptLow)/(ptHigh-ptLow))*100)) : 50;
+
   return`
-    <div class="shd">${en.analyst_count} analysts · ${rPill(en.rating)} · Consensus PT $${en.pt_consensus}</div>
-    ${en.cov.map(c=>{
-      const u=p&&c.target?((c.target-p)/p*100):null;
+    <div class="shd">${analystCount??'—'} analysts · ${rPill(rating)} · Consensus PT ${consensus?'$'+Number(consensus).toFixed(0):'N/A'}
+      <span style="float:right;font-size:8px;color:${isLive?'var(--green)':'var(--amber)'}">${isLive?'● LIVE':'● STATIC — click Refresh'}</span>
+    </div>
+    ${consensus&&ptLow!=null&&ptHigh!=null?`
+    <div class="ptbw">
+      <div class="ptbt"><div class="ptbf" style="width:${tp.toFixed(0)}%"></div><div class="ptbd" style="left:${tp.toFixed(0)}%"></div></div>
+      <div class="ptbls"><span>Low $${Number(ptLow).toFixed(0)}</span><span>▲ Now</span><span>High $${Number(ptHigh).toFixed(0)}</span></div>
+    </div>`:''}
+    ${grades.map(c=>{
+      const tgt = c.target ?? c.pt_consensus;
+      const u = p&&tgt ? ((tgt-p)/p*100) : null;
+      // Normalize rating label
+      const rawRating = c.rating ?? c.priceTargetRating ?? '';
+      const normRating = rawRating.toLowerCase().includes('buy')||rawRating==='Overweight'?'Buy'
+        : rawRating.toLowerCase().includes('sell')||rawRating==='Underweight'?'Sell'
+        : rawRating?'Hold':'';
+      const dateStr = c.date ? c.date.slice(0,7).replace('-',' ') : '';
       return`<div class="covr">
-        <span class="covf">${c.url?`<a href="${c.url}" target="_blank" style="color:var(--text);text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${c.firm} ↗</a>`:c.firm}</span>
+        <span class="covf">${c.url
+          ?`<a href="${c.url}" target="_blank" style="color:var(--text);text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${c.firm} ↗</a>`
+          :c.firm}</span>
         <div class="covright">
-          ${rPill(c.rating)}
-          <span style="font-family:var(--font-mono);font-size:11px;font-weight:500;color:${u==null?'var(--text)':u>=0?'var(--green)':'var(--red)'}">$${c.target}</span>
+          ${normRating?rPill(normRating):''}
+          ${tgt!=null?`<span style="font-family:var(--font-mono);font-size:11px;font-weight:500;color:${u==null?'var(--text)':u>=0?'var(--green)':'var(--red)'}">$${Number(tgt).toFixed(0)}</span>`:''}
           ${u!=null?`<span style="font-family:var(--font-mono);font-size:10px;color:${u>=0?'var(--green)':'var(--red)'}">${u>=0?'+':''}${u.toFixed(0)}%</span>`:''}
-          <span class="covd">${c.date}</span>
+          <span class="covd">${dateStr}</span>
         </div>
       </div>`;
     }).join('')}
@@ -1393,11 +1509,17 @@ function setTab(tab,el){
   activeTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  // When switching to Financials, fetch data for any tickers not yet cached
   if (tab==='financials') {
     TICKERS.forEach(t => {
       if (live[t] && !live[t].error && !finCache[t]) {
         fetchFinancials(t).then(()=>renderGrid()).catch(()=>{});
+      }
+    });
+  }
+  if (tab==='coverage') {
+    TICKERS.forEach(t => {
+      if (live[t] && !live[t].error && !analystCache[t]) {
+        fetchAnalystCoverage(t).then(()=>renderGrid()).catch(()=>{});
       }
     });
   }

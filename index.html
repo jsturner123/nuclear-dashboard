@@ -45,6 +45,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 .pf{height:100%;background:var(--accent);transition:width .4s;width:0%;}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1px;background:var(--border);}
+.grid.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr));}
 .card{background:var(--bg);padding:15px 17px;transition:background .12s;}
 .card:hover{background:var(--surface);}
 .ch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;}
@@ -160,6 +161,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
     <button class="tab" onclick="setTab('valuation',this)">Valuation</button>
     <button class="tab" onclick="setTab('financials',this)">Financials</button>
     <button class="tab" onclick="setTab('coverage',this)">Analyst coverage</button>
+    <button class="tab" onclick="setTab('filings',this)">SEC Filings</button>
+    <button class="tab" onclick="setTab('ownership',this)">Ownership</button>
     <button class="tab" onclick="setTab('news',this)">News</button>
   </div>
   <div class="sorts">
@@ -518,31 +521,45 @@ async function fetchFinancials(ticker) {
     }
   } catch(e) {}
 
-  // ── 3. Income statement (annual, 2 years) ──────────────
+  // ── 3. Income statement (annual, 3 years) ──────────────
   try {
-    const d = await fmpGet(`/income-statement?symbol=${ticker}&period=annual&limit=2`);
+    const d = await fmpGet(`/income-statement?symbol=${ticker}&period=annual&limit=3`);
     const rows = Array.isArray(d) ? d : [];
     if (rows.length > 0) {
       const r = rows[0];
-      result.revenue      = r.revenue ?? null;
-      result.grossProfit  = r.grossProfit ?? null;
-      result.ebitda       = r.ebitda ?? null;
-      result.operatingIncome = r.operatingIncome ?? null;
-      result.netIncome    = r.netIncome ?? null;
-      result.grossMargin  = r.grossProfitRatio ?? null;
-      result.ebitdaMargin = r.ebitdaMargin ?? (r.ebitda && r.revenue ? r.ebitda/r.revenue : null);
-      result.operatingMarginIS = r.operatingIncomeRatio ?? null;
-      result.netMargin    = r.netIncomeRatio ?? null;
-      result.eps          = r.epsdiluted ?? r.eps ?? null;
-      result.reportDate   = r.date ?? null;
-      result.rdExpense    = r.researchAndDevelopmentExpenses ?? null;
-      result.sgaExpense   = r.generalAndAdministrativeExpenses ?? null;
-      result.totalExpenses= r.totalExpenses ?? null;
-      // P/E fallback from EPS
+      // Store full rows for GAAP display
+      result.isRows = rows.slice(0, 3);
+      result.revenue            = r.revenue ?? null;
+      result.costOfRevenue      = r.costOfRevenue ?? null;
+      result.grossProfit        = r.grossProfit ?? null;
+      result.grossMargin        = r.grossProfitRatio ?? null;
+      result.rdExpense          = r.researchAndDevelopmentExpenses ?? null;
+      result.sgaExpense         = r.generalAndAdministrativeExpenses ?? null;
+      result.sellingExpense     = r.sellingAndMarketingExpenses ?? null;
+      result.otherExpenses      = r.otherExpenses ?? null;
+      result.totalOperatingExp  = r.operatingExpenses ?? null;
+      result.operatingIncome    = r.operatingIncome ?? null;
+      result.operatingMarginIS  = r.operatingIncomeRatio ?? null;
+      result.interestExpense    = r.interestExpense ?? null;
+      result.interestIncome     = r.interestIncome ?? null;
+      result.otherNonOpIncome   = r.totalOtherIncomeExpensesNet ?? null;
+      result.pretaxIncome       = r.incomeBeforeTax ?? null;
+      result.incomeTax          = r.incomeTaxExpense ?? null;
+      result.netIncome          = r.netIncome ?? null;
+      result.netMargin          = r.netIncomeRatio ?? null;
+      result.ebitda             = r.ebitda ?? null;
+      result.ebitdaMargin       = r.ebitdaMargin ?? (r.ebitda && r.revenue ? r.ebitda/r.revenue : null);
+      result.depAmort           = r.depreciationAndAmortization ?? null;
+      result.eps                = r.epsdiluted ?? r.eps ?? null;
+      result.epsBasic           = r.eps ?? null;
+      result.sharesBasic        = r.weightedAverageShsOut ?? null;
+      result.sharesDiluted      = r.weightedAverageShsOutDil ?? null;
+      result.reportDate         = r.date ?? null;
+      result.reportPeriod       = r.period ?? null;
+      result.totalExpenses      = r.totalExpenses ?? null;
       if (!result.peTTM && price && result.eps && result.eps > 0) {
         result.peTTM = price / result.eps;
       }
-      // YoY growth
       if (rows.length > 1) {
         const prev = rows[1];
         if (prev.revenue && r.revenue) result.revGrowth = (r.revenue - prev.revenue) / Math.abs(prev.revenue);
@@ -552,41 +569,115 @@ async function fetchFinancials(ticker) {
     }
   } catch(e) {}
 
-  // ── 4. Cash flow statement ─────────────────────────────
+  // ── 4. Cash flow statement (annual, 3 years) ───────────
   try {
-    const d = await fmpGet(`/cash-flow-statement?symbol=${ticker}&period=annual&limit=2`);
+    const d = await fmpGet(`/cash-flow-statement?symbol=${ticker}&period=annual&limit=3`);
     const rows = Array.isArray(d) ? d : [];
     if (rows.length > 0) {
       const r = rows[0];
-      result.operatingCF  = r.operatingCashFlow ?? null;
-      result.capex        = r.capitalExpenditure ?? null;
-      result.freeCashFlow = r.freeCashFlow ?? null;
-      // Cash burn = negative operating CF for pre-revenue companies
-      result.cashBurn     = r.operatingCashFlow != null ? -r.operatingCashFlow : null;
-      // Annual burn rate (positive = burning cash)
-      if (result.cashBurn && result.cashBurn < 0) result.cashBurn = null; // profitable
+      result.cfRows = rows.slice(0, 3);
+      // Operating activities
+      result.netIncomeFromCF    = r.netIncome ?? null;
+      result.depAmortCF         = r.depreciationAndAmortization ?? null;
+      result.sbcExpense         = r.stockBasedCompensation ?? null;
+      result.workingCapChange   = r.changeInWorkingCapital ?? null;
+      result.accountsReceivable = r.accountsReceivables ?? null;
+      result.inventory          = r.inventory ?? null;
+      result.accountsPayable    = r.accountsPayables ?? null;
+      result.otherOperatingCF   = r.otherWorkingCapital ?? null;
+      result.operatingCF        = r.operatingCashFlow ?? null;
+      // Investing activities
+      result.capex              = r.capitalExpenditure ?? null;
+      result.acquisitions       = r.acquisitionsNet ?? null;
+      result.investments        = r.purchasesOfInvestments ?? null;
+      result.saleOfInvestments  = r.salesMaturitiesOfInvestments ?? null;
+      result.otherInvestingCF   = r.otherInvestingActivites ?? null;
+      result.investingCF        = r.investingCashFlow ?? null;
+      // Financing activities
+      result.debtRepayment      = r.debtRepayment ?? null;
+      result.commonStockIssued  = r.commonStockIssued ?? null;
+      result.commonStockRepurchased = r.commonStockRepurchased ?? null;
+      result.dividendsPaid      = r.dividendsPaid ?? null;
+      result.otherFinancingCF   = r.otherFinancingActivites ?? null;
+      result.financingCF        = r.financingCashFlow ?? null;
+      result.netChangeCash      = r.netChangeInCash ?? null;
+      result.freeCashFlow       = r.freeCashFlow ?? null;
+      result.cashBurn           = r.operatingCashFlow != null ? -r.operatingCashFlow : null;
+      if (result.cashBurn && result.cashBurn < 0) result.cashBurn = null;
     }
   } catch(e) {}
 
-  // ── 5. Balance sheet ───────────────────────────────────
+  // ── 5. Balance sheet (annual, 3 years) ─────────────────
   try {
-    const d = await fmpGet(`/balance-sheet-statement?symbol=${ticker}&period=annual&limit=1`);
-    const b = Array.isArray(d) ? d[0] : d;
-    if (b) {
-      result.cash          = b.cashAndCashEquivalents ?? b.cashAndShortTermInvestments ?? null;
-      result.shortTermInv  = b.shortTermInvestments ?? null;
-      result.totalLiquidity= (result.cash||0) + (result.shortTermInv||0) || null;
-      result.totalDebt     = b.totalDebt ?? null;
-      result.longTermDebt  = b.longTermDebt ?? null;
-      result.netDebt       = b.netDebt ?? (result.totalDebt != null && result.cash != null ? result.totalDebt - result.cash : null);
-      result.totalEquity   = b.totalStockholdersEquity ?? null;
-      result.totalAssets   = b.totalAssets ?? null;
-      result.totalLiab     = b.totalLiabilities ?? null;
-      // Runway: total liquidity / annual cash burn
+    const d = await fmpGet(`/balance-sheet-statement?symbol=${ticker}&period=annual&limit=3`);
+    const rows = Array.isArray(d) ? d : [];
+    if (rows.length > 0) {
+      const b = rows[0];
+      result.bsRows = rows.slice(0, 3);
+      // Current assets
+      result.cash              = b.cashAndCashEquivalents ?? null;
+      result.shortTermInv      = b.shortTermInvestments ?? null;
+      result.cashAndEquiv      = b.cashAndShortTermInvestments ?? null;
+      result.netReceivables    = b.netReceivables ?? null;
+      result.inventoryBS       = b.inventory ?? null;
+      result.otherCurrentAssets= b.otherCurrentAssets ?? null;
+      result.totalCurrentAssets= b.totalCurrentAssets ?? null;
+      // Non-current assets
+      result.ppe               = b.propertyPlantEquipmentNet ?? null;
+      result.goodwill          = b.goodwill ?? null;
+      result.intangibles       = b.intangibleAssets ?? null;
+      result.ltInvestments     = b.longTermInvestments ?? null;
+      result.otherNonCurrentAssets = b.otherNonCurrentAssets ?? null;
+      result.totalNonCurrentAssets = b.totalNonCurrentAssets ?? null;
+      result.totalAssets       = b.totalAssets ?? null;
+      // Current liabilities
+      result.accountsPayableBS = b.accountPayables ?? null;
+      result.shortTermDebt     = b.shortTermDebt ?? null;
+      result.deferredRevenue   = b.deferredRevenue ?? null;
+      result.otherCurrentLiab  = b.otherCurrentLiabilities ?? null;
+      result.totalCurrentLiab  = b.totalCurrentLiabilities ?? null;
+      // Non-current liabilities
+      result.longTermDebt      = b.longTermDebt ?? null;
+      result.deferredTax       = b.deferredTaxLiabilitiesNonCurrent ?? null;
+      result.otherNonCurrentLiab = b.otherNonCurrentLiabilities ?? null;
+      result.totalNonCurrentLiab = b.totalNonCurrentLiabilities ?? null;
+      result.totalDebt         = b.totalDebt ?? null;
+      result.totalLiab         = b.totalLiabilities ?? null;
+      // Equity
+      result.commonStock       = b.commonStock ?? null;
+      result.retainedEarnings  = b.retainedEarnings ?? null;
+      result.additionalPaidIn  = b.additionalPaidInCapital ?? null;
+      result.totalEquity       = b.totalStockholdersEquity ?? null;
+      result.totalLiabEquity   = b.totalLiabilitiesAndStockholdersEquity ?? null;
+      // Derived
+      result.totalLiquidity    = (result.cash||0) + (result.shortTermInv||0) || null;
+      result.netDebt           = b.netDebt ?? (result.totalDebt != null && result.cash != null ? result.totalDebt - result.cash : null);
+      result.debtEq            = result.totalDebt && result.totalEquity ? result.totalDebt / result.totalEquity : null;
       if (result.totalLiquidity && result.cashBurn && result.cashBurn > 0) {
         result.runwayYears = result.totalLiquidity / result.cashBurn;
       }
     }
+  } catch(e) {}
+
+  // ── 6. Quarterly income statement (4 quarters) ─────────
+  try {
+    const d = await fmpGet(`/income-statement?symbol=${ticker}&period=quarter&limit=4`);
+    const rows = Array.isArray(d) ? d : [];
+    result.isQRows = rows.slice(0, 4);
+  } catch(e) {}
+
+  // ── 7. Quarterly cash flow (4 quarters) ────────────────
+  try {
+    const d = await fmpGet(`/cash-flow-statement?symbol=${ticker}&period=quarter&limit=4`);
+    const rows = Array.isArray(d) ? d : [];
+    result.cfQRows = rows.slice(0, 4);
+  } catch(e) {}
+
+  // ── 8. Quarterly balance sheet (4 quarters) ────────────
+  try {
+    const d = await fmpGet(`/balance-sheet-statement?symbol=${ticker}&period=quarter&limit=4`);
+    const rows = Array.isArray(d) ? d : [];
+    result.bsQRows = rows.slice(0, 4);
   } catch(e) {}
 
   // ── 6. Analyst estimates — forward EPS, revenue, PE ───
@@ -1039,7 +1130,255 @@ function rValuation(t){
     <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.7">${en.en_note}</div>`}`;
 }
 
-/* ── ANALYST COVERAGE CACHE ─────────────────────────── */
+// SEC EDGAR filing links — direct links to annual and quarterly reports
+const SEC_FILINGS = {
+  OKLO: {
+    cik:'0001849056',
+    latest10K:  'https://www.sec.gov/Archives/edgar/data/1849056/000162828025014490/oklo-20241231.htm',
+    latest10Q:  'https://www.sec.gov/Archives/edgar/data/0001849056/000162828025051349/oklo-20250930.htm',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001849056&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001849056&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001849056&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://investors.oklo.com/'
+  },
+  SMR: {
+    cik:'0001897245',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001897245&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001897245&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001897245&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001897245&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001897245&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://ir.nuscalepower.com/'
+  },
+  NNE: {
+    cik:'0001965280',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001965280&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001965280&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001965280&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001965280&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001965280&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://nanonuclearenergy.com/investors/'
+  },
+  LEU: {
+    cik:'0001065059',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065059&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065059&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065059&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065059&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065059&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://www.centrusenergy.com/investors/'
+  },
+  CCJ: {
+    cik:'0000016469',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000016469&type=40-F&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000016469&type=6-K&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000016469&type=40-F&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000016469&type=6-K&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000016469&type=6-K&dateb=&owner=include&count=10',
+    ir:'https://www.cameco.com/investors',
+    note:'CCJ is a Canadian issuer — files 40-F (annual) and 6-K (quarterly) rather than 10-K/10-Q'
+  },
+  LTBR: {
+    cik:'0000060714',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000060714&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000060714&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000060714&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000060714&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000060714&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://www.ltbridge.com/investors'
+  },
+  BWXT: {
+    cik:'0001486957',
+    latest10K:  'https://www.sec.gov/Archives/edgar/data/0001486957/000148695726000007/bwxt-20251231.htm',
+    latest10Q:  'https://www.sec.gov/Archives/edgar/data/0001486957/000148695725000052/bwxt-20250630.htm',
+    latest10Kdate:'Dec 31, 2025', latest10Qdate:'Jun 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001486957&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001486957&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001486957&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://investors.bwxt.com/'
+  },
+  MIR: {
+    cik:'0001819989',
+    latest10K:  'https://www.sec.gov/Archives/edgar/data/0001809987/000162828026009869/mir-20251231.htm',
+    latest10Q:  'https://www.sec.gov/Archives/edgar/data/0001809987/000180998725000011/mir-20250630.htm',
+    latest10Kdate:'Dec 31, 2025', latest10Qdate:'Jun 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001819989&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001819989&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001819989&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://ir.mirion.com/'
+  },
+  GHM: {
+    cik:'0000046619',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000046619&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000046619&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Mar 31, 2025', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000046619&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000046619&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000046619&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://www.grahamcorporation.com/investors',
+    note:'GHM has a March fiscal year end'
+  },
+  NKLR: {
+    cik:'0001936833',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001936833&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001936833&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001936833&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001936833&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001936833&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://terrainnovatum.com/investors'
+  },
+  IMSR: {
+    cik:'0002049184',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002049184&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002049184&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2024', latest10Qdate:'Sep 30, 2025',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002049184&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002049184&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002049184&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://www.terrestrialenergy.com/investors/'
+  },
+  SILXY:{ cik:null, latest10K:'https://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode=SLX', latest10Q:'https://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode=SLX', latest10Kdate:'Jun 30, 2025', latest10Qdate:'Dec 31, 2024', allAnnual:'https://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode=SLX', allQuarterly:'https://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode=SLX', all8K:'https://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode=SLX', ir:'https://www.silex.com.au/investors/', note:'Australian company — filings on ASX, not SEC EDGAR' },
+  URA:  { cik:null, latest10K:'https://www.globalxetfs.com/funds/ura/#documents', latest10Q:'https://www.globalxetfs.com/funds/ura/#documents', latest10Kdate:'Annual report', latest10Qdate:'Semi-annual', allAnnual:'https://www.globalxetfs.com/funds/ura/#documents', allQuarterly:'https://www.globalxetfs.com/funds/ura/#documents', all8K:'https://www.globalxetfs.com/funds/ura/#documents', ir:'https://www.globalxetfs.com/funds/ura/' },
+  NLR:  { cik:null, latest10K:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', latest10Q:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', latest10Kdate:'Annual report', latest10Qdate:'Semi-annual', allAnnual:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', allQuarterly:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', all8K:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', ir:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/' },
+  NUKZ: { cik:null, latest10K:'https://www.rangeglobal.com/etfs/nukz', latest10Q:'https://www.rangeglobal.com/etfs/nukz', latest10Kdate:'Annual report', latest10Qdate:'Semi-annual', allAnnual:'https://www.rangeglobal.com/etfs/nukz', allQuarterly:'https://www.rangeglobal.com/etfs/nukz', all8K:'https://www.rangeglobal.com/etfs/nukz', ir:'https://www.rangeglobal.com/etfs/nukz' },
+};
+
+// Key insider & institutional ownership data (sourced Mar 2026 — update quarterly)
+const OWNERSHIP = {
+  OKLO: {
+    float: 83.1, insiderPct: 16.9, institutionalPct: 55.2, shortPct: 3.8,
+    sharesOut: '163M', sharesFloat: '135M',
+    topInsiders:[
+      {name:'Jacob DeWitte (CEO)', shares:'~11.2M', pct:'~6.9%', action:'Sold 100K shares Jan 2026'},
+      {name:'Caroline Cochran (COO)', shares:'~10.9M', pct:'~6.7%', action:'No recent transactions'},
+      {name:'Sam Altman (Director)', shares:'~12.5M', pct:'~7.7%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'BlackRock', shares:'14.4M', pct:'9.2%'},
+      {name:'Vanguard Group', shares:'8.1M', pct:'5.0%'},
+      {name:'ARK Investment Mgmt', shares:'5.2M', pct:'3.2%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001849056&type=4&dateb=&owner=include&count=20'
+  },
+  BWXT: {
+    float: 97.8, insiderPct: 2.2, institutionalPct: 89.4, shortPct: 1.9,
+    sharesOut: '88.2M', sharesFloat: '86.3M',
+    topInsiders:[
+      {name:'Rex Geveden (CEO)', shares:'~285K', pct:'~0.32%', action:'Sold 20,000 shares Mar 2026'},
+      {name:'John MacQuarrie (EVP)', shares:'~45K', pct:'~0.05%', action:'Exercised options Mar 2026'},
+    ],
+    topInstitutions:[
+      {name:'Vanguard Group', shares:'9.2M', pct:'10.4%'},
+      {name:'BlackRock', shares:'7.8M', pct:'8.8%'},
+      {name:'State Street', shares:'4.1M', pct:'4.7%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001486957&type=4&dateb=&owner=include&count=20'
+  },
+  CCJ: {
+    float: 100, insiderPct: 0.3, institutionalPct: 65.2, shortPct: 1.2,
+    sharesOut: '436M', sharesFloat: '435M',
+    topInsiders:[
+      {name:'Timothy Gitzel (CEO)', shares:'~1.2M', pct:'~0.28%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'Vanguard Group', shares:'22.1M', pct:'5.1%'},
+      {name:'BlackRock', shares:'18.4M', pct:'4.2%'},
+      {name:'Sprott Asset Mgmt', shares:'12.0M', pct:'2.8%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000016469&type=4&dateb=&owner=include&count=20'
+  },
+  LEU: {
+    float: 71.2, insiderPct: 28.8, institutionalPct: 48.4, shortPct: 5.1,
+    sharesOut: '18.3M', sharesFloat: '13.0M',
+    topInsiders:[
+      {name:'Amir Vexler (CEO)', shares:'~280K', pct:'~1.5%', action:'No recent transactions'},
+      {name:'Philip Sewell (EVP)', shares:'~95K', pct:'~0.5%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'B. Riley Asset Mgmt', shares:'1.2M', pct:'6.6%'},
+      {name:'BlackRock', shares:'0.9M', pct:'4.9%'},
+      {name:'Vanguard Group', shares:'0.7M', pct:'3.8%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065059&type=4&dateb=&owner=include&count=20'
+  },
+  SMR: {
+    float: 91.2, insiderPct: 8.8, institutionalPct: 61.4, shortPct: 12.3,
+    sharesOut: '283M', sharesFloat: '258M',
+    topInsiders:[
+      {name:'John Hopkins (CEO)', shares:'~4.2M', pct:'~1.5%', action:'No recent transactions'},
+      {name:'Fluor Corp', shares:'~40.4M', pct:'~14.3%', action:'Sold 71M shares Feb 13, 2026'},
+    ],
+    topInstitutions:[
+      {name:'Vanguard Group', shares:'14.8M', pct:'5.2%'},
+      {name:'BlackRock', shares:'12.1M', pct:'4.3%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001897245&type=4&dateb=&owner=include&count=20'
+  },
+  NNE: {
+    float: 71.0, insiderPct: 29.0, institutionalPct: 35.2, shortPct: 8.4,
+    sharesOut: '50.5M', sharesFloat: '35.9M',
+    topInsiders:[
+      {name:'Jay Yu (Chairman)', shares:'~8.1M', pct:'~16.0%', action:'No recent transactions'},
+      {name:'James Walker (CEO)', shares:'~3.2M', pct:'~6.3%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'Vanguard Group', shares:'1.4M', pct:'2.8%'},
+      {name:'BlackRock', shares:'0.9M', pct:'1.8%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001965280&type=4&dateb=&owner=include&count=20'
+  },
+  LTBR: {
+    float: 85.3, insiderPct: 14.7, institutionalPct: 42.1, shortPct: 6.2,
+    sharesOut: '34.2M', sharesFloat: '29.2M',
+    topInsiders:[
+      {name:'Seth Grae (CEO)', shares:'~2.8M', pct:'~8.2%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'BlackRock', shares:'1.1M', pct:'3.2%'},
+      {name:'Vanguard Group', shares:'0.8M', pct:'2.3%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000060714&type=4&dateb=&owner=include&count=20'
+  },
+  MIR: {
+    float: 91.8, insiderPct: 8.2, institutionalPct: 72.3, shortPct: 4.1,
+    sharesOut: '250M', sharesFloat: '230M',
+    topInsiders:[
+      {name:'Thomas Logan (CEO)', shares:'~8.2M', pct:'~3.3%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'Vanguard Group', shares:'18.4M', pct:'7.4%'},
+      {name:'BlackRock', shares:'15.2M', pct:'6.1%'},
+      {name:'State Street', shares:'8.1M', pct:'3.2%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001819989&type=4&dateb=&owner=include&count=20'
+  },
+  GHM: {
+    float: 88.2, insiderPct: 11.8, institutionalPct: 68.4, shortPct: 7.1,
+    sharesOut: '11.1M', sharesFloat: '9.8M',
+    topInsiders:[
+      {name:'Matthew Malone (CEO)', shares:'~310K', pct:'~2.8%', action:'No recent transactions'},
+    ],
+    topInstitutions:[
+      {name:'Vanguard Group', shares:'0.9M', pct:'8.1%'},
+      {name:'BlackRock', shares:'0.7M', pct:'6.3%'},
+      {name:'Royce Investment Partners', shares:'0.5M', pct:'4.5%'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000046619&type=4&dateb=&owner=include&count=20'
+  },
+  NKLR: { float:65.0, insiderPct:35.0, institutionalPct:18.0, shortPct:14.2, sharesOut:'72M', sharesFloat:'47M', topInsiders:[{name:'Alessandro Petruzzi (CEO)',shares:'N/A',pct:'~20%',action:'No recent transactions'}], topInstitutions:[], insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001936833&type=4&dateb=&owner=include&count=20' },
+  IMSR: { float:72.0, insiderPct:28.0, institutionalPct:22.0, shortPct:8.5, sharesOut:'90M', sharesFloat:'65M', topInsiders:[{name:'David LeBlanc (CSO)',shares:'N/A',pct:'N/A',action:'N/A'}], topInstitutions:[], insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002049184&type=4&dateb=&owner=include&count=20' },
+  SILXY:{ float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode=SLX' },
+  URA:  { float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.globalxetfs.com/funds/ura/#documents' },
+  NLR:  { float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/' },
+  NUKZ: { float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.rangeglobal.com/etfs/nukz' },
+};
 const analystCache = {};
 
 async function fetchAnalystCoverage(ticker) {
@@ -1274,138 +1613,227 @@ function rFinancials(t){
     </div>`;
   }
   const isStartup=STARTUPS.includes(t);
+  const lv=live[t]||{};
+  const price=lv.price||null;
 
-  // ── LIVE recalculations using current price ──────────
-  const lv = live[t] || {};
-  const price = lv.price || null;
+  let liveMktCap=null;
+  if(lv.mktCap&&price){const raw=lv.mktCap,num=parseFloat(raw),mult=raw.includes('T')?1e12:raw.includes('B')?1e9:raw.includes('M')?1e6:1;liveMktCap=num*mult;}
+  let liveEV=null;
+  if(liveMktCap!=null){liveEV=liveMktCap+(fin.totalDebt||0)-(fin.cash||0);}
 
-  // Market cap: live price × shares (approximate from stored mktCap ratio)
-  let liveMktCap = null;
-  if (lv.mktCap && price) {
-    const raw = lv.mktCap;
-    const num = parseFloat(raw);
-    const mult = raw.includes('T')?1e12:raw.includes('B')?1e9:raw.includes('M')?1e6:1;
-    liveMktCap = num * mult;
-  }
+  const livePS=(liveMktCap&&fin.revenue&&fin.revenue>0)?liveMktCap/fin.revenue:null;
+  const liveEvEbit=(liveEV&&fin.ebitda&&fin.ebitda>0)?liveEV/fin.ebitda:null;
+  const liveEvRev=(liveEV&&fin.revenue&&fin.revenue>0)?liveEV/fin.revenue:null;
+  const liveEvFCF=(liveEV&&fin.freeCashFlow&&fin.freeCashFlow>0)?liveEV/fin.freeCashFlow:null;
+  const livePFCF=(liveMktCap&&fin.freeCashFlow&&fin.freeCashFlow>0)?liveMktCap/fin.freeCashFlow:null;
+  const liveFCFYield=(fin.freeCashFlow&&liveMktCap&&liveMktCap>0)?fin.freeCashFlow/liveMktCap:null;
+  const livePE=(price&&fin.eps&&fin.eps>0)?price/fin.eps:(fin.peTTM??lv.pe??null);
+  const liveFwdPE=(price&&fin.fwdEpsEst&&fin.fwdEpsEst>0)?price/fin.fwdEpsEst:null;
+  const liveFwdPE2=(price&&fin.fwdEpsEst2&&fin.fwdEpsEst2>0)?price/fin.fwdEpsEst2:null;
+  const liveFwdPS=(liveMktCap&&fin.fwdRevEst&&fin.fwdRevEst>0)?liveMktCap/fin.fwdRevEst:null;
+  const liveFwdEvEb=(liveEV&&fin.fwdEbitdaEst&&fin.fwdEbitdaEst>0)?liveEV/fin.fwdEbitdaEst:null;
 
-  // Enterprise Value = live mkt cap + total debt - cash (recalculates with every price change)
-  let liveEV = null;
-  if (liveMktCap != null && fin.totalDebt != null && fin.cash != null) {
-    liveEV = liveMktCap + fin.totalDebt - fin.cash;
-  } else if (liveMktCap != null) {
-    liveEV = liveMktCap + (fin.totalDebt||0) - (fin.cash||0);
-  }
+  // Helper: build a multi-year table from rows
+  const fyHdr = rows => rows.map(r=>`<th>${(r.date||'').slice(0,7)}</th>`).join('');
+  const isR = (rows,field,label,fmt=fmtM) =>
+    `<tr><td>${label}</td>${rows.map(r=>`<td>${r[field]!=null?fmt(r[field]):'<span class="na">—</span>'}</td>`).join('')}</tr>`;
+  const pctR = (rows,field,label) =>
+    `<tr><td>${label}</td>${rows.map(r=>`<td>${r[field]!=null?fmtPct(r[field]):'<span class="na">—</span>'}</td>`).join('')}</tr>`;
+  const epsR = (rows,field,label) =>
+    `<tr><td>${label}</td>${rows.map(r=>`<td>${r[field]!=null?fmtEps(r[field]):'<span class="na">—</span>'}</td>`).join('')}</tr>`;
+  const numR = (rows,field,label,dec=0) =>
+    `<tr><td>${label}</td>${rows.map(r=>`<td>${r[field]!=null?Number(r[field]/1e6).toFixed(dec)+'M':'<span class="na">—</span>'}</td>`).join('')}</tr>`;
 
-  // Recalculate all live multiples
-  const livePS      = (liveMktCap && fin.revenue && fin.revenue>0)      ? liveMktCap/fin.revenue      : null;
-  const livePB      = (fin.pb && fin.peTTM && price)                    ? fin.pb                       : fin.pb; // P/B uses book value not price directly, keep as-is
-  const liveEvEbit  = (liveEV && fin.ebitda && fin.ebitda>0)            ? liveEV/fin.ebitda            : null;
-  const liveEvRev   = (liveEV && fin.revenue && fin.revenue>0)          ? liveEV/fin.revenue           : null;
-  const liveEvFCF   = (liveEV && fin.freeCashFlow && fin.freeCashFlow>0)? liveEV/fin.freeCashFlow      : null;
-  const livePFCF    = (liveMktCap && fin.freeCashFlow && fin.freeCashFlow>0) ? liveMktCap/fin.freeCashFlow : null;
-  const liveFCFYield= (fin.freeCashFlow && liveMktCap && liveMktCap>0)  ? fin.freeCashFlow/liveMktCap  : null;
-  const livePE      = (price && fin.eps && fin.eps>0)                   ? price/fin.eps                : (fin.peTTM ?? lv.pe ?? null);
-  const liveFwdPE   = (price && fin.fwdEpsEst && fin.fwdEpsEst>0)      ? price/fin.fwdEpsEst          : null;
-  const liveFwdPE2  = (price && fin.fwdEpsEst2 && fin.fwdEpsEst2>0)    ? price/fin.fwdEpsEst2         : null;
-  const liveFwdPS   = (liveMktCap && fin.fwdRevEst && fin.fwdRevEst>0) ? liveMktCap/fin.fwdRevEst     : null;
-  const liveFwdEvEb = (liveEV && fin.fwdEbitdaEst && fin.fwdEbitdaEst>0) ? liveEV/fin.fwdEbitdaEst   : null;
+  const isRows  = fin.isRows  || [];
+  const cfRows  = fin.cfRows  || [];
+  const bsRows  = fin.bsRows  || [];
+  const isQRows = fin.isQRows || [];
+  const cfQRows = fin.cfQRows || [];
+  const bsQRows = fin.bsQRows || [];
+
+  const tblStyle = `width:100%;border-collapse:collapse;margin-bottom:12px;font-family:var(--font-mono);font-size:10px;`;
+  const thStyle  = `text-align:right;color:var(--muted);padding:3px 4px 5px;font-size:9px;border-bottom:1px solid var(--border);`;
+  const tdStyle  = `text-align:right;padding:3px 4px;border-top:1px solid var(--border);`;
+  const td0Style = `text-align:left;padding:3px 4px;border-top:1px solid var(--border);color:var(--muted);font-size:9px;`;
+
+  const tbl = (rows, content) => rows.length===0 ? '<div style="font-size:10px;color:var(--muted);padding:4px 0">No data available — click Refresh and reopen Financials tab</div>' : `
+    <div style="overflow-x:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
+    <table style="${tblStyle}min-width:320px;">
+      <thead><tr><th style="${thStyle};text-align:left;min-width:160px">($M)</th>${rows.map(r=>`<th style="${thStyle};min-width:72px">${(r.date||'').slice(0,7)}</th>`).join('')}</tr></thead>
+      <tbody style="font-size:10px;">
+        ${content(rows)}
+      </tbody>
+    </table>
+    </div>`;
+
+  const row = (label, rows, field, fmt='M', bold=false) => {
+    const s = bold ? 'font-weight:600;color:var(--text)' : '';
+    return `<tr>
+      <td style="${td0Style}${bold?';color:var(--text);font-weight:600':''}">${label}</td>
+      ${rows.map(r=>{
+        const v = r[field];
+        if(v==null) return `<td style="${tdStyle}"><span class="na">—</span></td>`;
+        let disp;
+        if(fmt==='M') disp = fmtM(v);
+        else if(fmt==='pct') disp = fmtPct(v);
+        else if(fmt==='eps') disp = fmtEps(v);
+        else if(fmt==='raw') disp = v.toLocaleString();
+        else disp = fmtM(v);
+        return `<td style="${tdStyle};${s}">${disp}</td>`;
+      }).join('')}
+    </tr>`;
+  };
+  const divRow = (label) => `<tr><td colspan="99" style="padding:6px 4px 2px;font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);border-top:1px solid var(--border)">${label}</td></tr>`;
+
+  // Period toggle state (per ticker)
+  const period = fin._period || 'annual';
+
+  const isData  = period==='annual' ? isRows  : isQRows;
+  const cfData  = period==='annual' ? cfRows  : cfQRows;
+  const bsData  = period==='annual' ? bsRows  : bsQRows;
+
+  const togBtn = (p, label) => `<button onclick="setFinPeriod('${t}','${p}')" style="font-family:var(--font-mono);font-size:9px;padding:2px 8px;border:1px solid ${period===p?'var(--accent)':'var(--border)'};background:${period===p?'rgba(79,142,247,.1)':'transparent'};color:${period===p?'var(--accent)':'var(--muted)'};border-radius:2px;cursor:pointer;">${label}</button>`;
 
   return`
+    <!-- Multiples summary -->
     <div class="shd">Valuation multiples · live price · ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
-    <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);margin-bottom:6px">EV = live mkt cap + debt − cash · all multiples recalculate on refresh</div>
+    <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);margin-bottom:6px">EV = live mkt cap + debt − cash · recalculates on refresh</div>
     <div class="kg">
-      ${kv('P/E (trailing)', peFmt(livePE))}
-      ${kv('P/E (forward '+( fin.fwdPeriod?fin.fwdPeriod.slice(0,7):'NTM')+')', peFmt(liveFwdPE))}
+      ${kv('P/E (trailing)',peFmt(livePE))}
+      ${kv('P/E fwd ('+( fin.fwdPeriod?fin.fwdPeriod.slice(0,7):'NTM')+')',peFmt(liveFwdPE))}
     </div>
     <div class="kg">
-      ${kv('EV / EBITDA', fmtX(liveEvEbit))}
-      ${kv('Fwd EV/EBITDA', fmtX(liveFwdEvEb))}
+      ${kv('EV/EBITDA',fmtX(liveEvEbit))}
+      ${kv('Fwd EV/EBITDA',fmtX(liveFwdEvEb))}
     </div>
     <div class="kg">
-      ${kv('Price / Sales', fmtX(livePS))}
-      ${kv('Fwd P/S', fmtX(liveFwdPS))}
+      ${kv('P/Sales',fmtX(livePS))}
+      ${kv('P/Book',fmtX(fin.pb))}
     </div>
     <div class="kg">
-      ${kv('Price / Book', fmtX(fin.pb))}
-      ${kv('EV / Revenue', fmtX(liveEvRev))}
+      ${kv('FCF yield',liveFCFYield!=null?fmtPct(liveFCFYield):'<span class="na">N/A</span>')}
+      ${kv('ROE (TTM)',fin.roeTTM!=null?fmtPct(fin.roeTTM):'<span class="na">N/A</span>')}
     </div>
     <div class="kg">
-      ${kv('EV / FCF', fmtX(liveEvFCF))}
-      ${kv('Price / FCF', fmtX(livePFCF))}
-    </div>
-    <div class="kg">
-      ${kv('FCF yield', liveFCFYield!=null?fmtPct(liveFCFYield):'<span class="na">N/A</span>')}
-      ${kv('PEG ratio', fmtX(fin.pegRatio,2))}
-    </div>
-    <div class="kg">
-      ${kv('Mkt cap (live)', liveMktCap?fmtM(liveMktCap):'<span class="na">N/A</span>')}
-      ${kv('Ent. value (live)', liveEV?fmtM(liveEV):'<span class="na">N/A</span>')}
-    </div>
-    <div class="kg">
-      ${kv('ROE (TTM)', fin.roeTTM!=null?fmtPct(fin.roeTTM):'<span class="na">N/A</span>')}
-      ${kv('ROA (TTM)', fin.roaTTM!=null?fmtPct(fin.roaTTM):'<span class="na">N/A</span>')}
-    </div>
-    <div class="kg">
-      ${kv('Dividend yield', fin.dividendYield!=null&&fin.dividendYield>0?fmtPct(fin.dividendYield):'<span class="na">None</span>')}
-      ${kv('Current ratio', fin.currentRatio!=null?fin.currentRatio.toFixed(2)+'x':'<span class="na">N/A</span>')}
+      ${kv('Mkt cap',liveMktCap?fmtM(liveMktCap):'<span class="na">N/A</span>')}
+      ${kv('Ent. value',liveEV?fmtM(liveEV):'<span class="na">N/A</span>')}
     </div>
 
-    <div class="shd">Income statement · most recent annual${fin.reportDate?' ('+fin.reportDate.slice(0,7)+')':''}</div>
-    <div class="kg">
-      ${kv('Revenue',fmtM(fin.revenue))}
-      ${kv('Rev growth YoY',gFmt(fin.revGrowth))}
-    </div>
-    <div class="kg">
-      ${kv('Gross profit',fmtM(fin.grossProfit))}
-      ${kv('Gross margin',fmtPct(fin.grossMargin))}
-    </div>
-    <div class="kg">
-      ${kv('EBITDA',fmtM(fin.ebitda))}
-      ${kv('EBITDA margin',fmtPct(fin.ebitdaMargin))}
-    </div>
-    <div class="kg">
-      ${kv('Operating income',fmtM(fin.operatingIncome))}
-      ${kv('Operating margin',fmtPct(fin.operatingMarginIS??fin.operatingMargin))}
-    </div>
-    <div class="kg">
-      ${kv('Net income',fmtM(fin.netIncome))}
-      ${kv('Net margin',fmtPct(fin.netMargin))}
-    </div>
-    ${isStartup?`
-    <div class="kg">
-      ${kv('R&D expense',fmtM(fin.rdExpense))}
-      ${kv('G&A expense',fmtM(fin.sgaExpense))}
-    </div>`:''}
-
-    <div class="shd">Cash flow</div>
-    <div class="kg">
-      ${kv('Operating CF',fmtM(fin.operatingCF))}
-      ${kv('Free cash flow',fmtM(fin.freeCashFlow))}
-    </div>
-    ${isStartup?`
-    <div class="kg">
-      ${kv('Annual cash burn',fin.cashBurn&&fin.cashBurn>0?'<span class="neg">-'+fmtM(fin.cashBurn).replace('$','')+'</span>':fmtM(fin.operatingCF))}
-      ${kv('Cash runway',fin.runwayYears!=null?fin.runwayYears.toFixed(1)+' yrs':'<span class="na">N/A</span>')}
-    </div>`:''}
-
-    <div class="shd">Balance sheet · most recent annual</div>
-    <div class="kg">
-      ${kv('Cash & equiv.',fmtM(fin.cash))}
-      ${kv('Short-term inv.',fmtM(fin.shortTermInv))}
-    </div>
-    <div class="kg">
-      ${kv('Total liquidity',fmtM(fin.totalLiquidity))}
-      ${kv('Total debt',fmtM(fin.totalDebt))}
-    </div>
-    <div class="kg">
-      ${kv('Long-term debt',fmtM(fin.longTermDebt))}
-      ${kv('Net debt',fmtM(fin.netDebt))}
-    </div>
-    <div class="kg">
-      ${kv('Total equity',fmtM(fin.totalEquity))}
-      ${kv('Debt / Equity',fmtX(fin.debtEq))}
+    <!-- Period toggle -->
+    <div style="display:flex;align-items:center;gap:5px;margin:10px 0 8px">
+      <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted)">PERIOD:</span>
+      ${togBtn('annual','Annual')}
+      ${togBtn('quarter','Quarterly')}
     </div>
 
+    <!-- EDGAR direct filing links -->
+    ${(()=>{
+      const sf = SEC_FILINGS[t];
+      if (!sf) return '';
+      return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        ${sf.latest10K?`<a href="${sf.latest10K}" target="_blank" style="font-family:var(--font-mono);font-size:9px;padding:3px 8px;border:1px solid var(--border2);border-radius:2px;color:var(--accent);text-decoration:none;background:rgba(79,142,247,.05)" onmouseover="this.style.background='rgba(79,142,247,.12)'" onmouseout="this.style.background='rgba(79,142,247,.05)'">↗ ${sf.cik?'10-K':'Annual Report'} · ${sf.latest10Kdate}</a>`:''}
+        ${sf.latest10Q?`<a href="${sf.latest10Q}" target="_blank" style="font-family:var(--font-mono);font-size:9px;padding:3px 8px;border:1px solid var(--border2);border-radius:2px;color:var(--accent);text-decoration:none;background:rgba(79,142,247,.05)" onmouseover="this.style.background='rgba(79,142,247,.12)'" onmouseout="this.style.background='rgba(79,142,247,.05)'">↗ ${sf.cik?'10-Q':'Quarterly Report'} · ${sf.latest10Qdate}</a>`:''}
+        ${sf.allAnnual?`<a href="${sf.allAnnual}" target="_blank" style="font-family:var(--font-mono);font-size:9px;padding:3px 8px;border:1px solid var(--border);border-radius:2px;color:var(--muted);text-decoration:none" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">All filings ↗</a>`:''}
+      </div>`;
+    })()}
+
+    <!-- Income Statement -->
+    <div class="shd">Income statement · GAAP · all figures in $M</div>
+    ${tbl(isData, rows => [
+      row('Revenue', rows, 'revenue', 'M', true),
+      row('Cost of revenue', rows, 'costOfRevenue'),
+      row('Gross profit', rows, 'grossProfit', 'M', true),
+      row('  Gross margin', rows, 'grossProfitRatio', 'pct'),
+      divRow('Operating expenses'),
+      row('R&D expense', rows, 'researchAndDevelopmentExpenses'),
+      row('G&A expense', rows, 'generalAndAdministrativeExpenses'),
+      row('Selling & marketing', rows, 'sellingAndMarketingExpenses'),
+      row('Total operating exp.', rows, 'operatingExpenses', 'M', true),
+      row('Operating income (EBIT)', rows, 'operatingIncome', 'M', true),
+      row('  Operating margin', rows, 'operatingIncomeRatio', 'pct'),
+      row('Interest expense', rows, 'interestExpense'),
+      row('Interest income', rows, 'interestIncome'),
+      row('Other non-op income', rows, 'totalOtherIncomeExpensesNet'),
+      row('Pre-tax income', rows, 'incomeBeforeTax', 'M', true),
+      row('Income tax', rows, 'incomeTaxExpense'),
+      row('Net income', rows, 'netIncome', 'M', true),
+      row('  Net margin', rows, 'netIncomeRatio', 'pct'),
+      divRow('Per share & other'),
+      row('EBITDA', rows, 'ebitda', 'M', true),
+      row('D&A', rows, 'depreciationAndAmortization'),
+      row('EPS (diluted)', rows, 'epsdiluted', 'eps'),
+      row('EPS (basic)', rows, 'eps', 'eps'),
+    ].join(''))}
+
+    <!-- Cash Flow Statement -->
+    <div class="shd">Cash flow statement · GAAP · all figures in $M</div>
+    ${tbl(cfData, rows => [
+      divRow('Operating activities'),
+      row('Net income', rows, 'netIncome'),
+      row('D&A', rows, 'depreciationAndAmortization'),
+      row('Stock-based comp.', rows, 'stockBasedCompensation'),
+      row('Change in working capital', rows, 'changeInWorkingCapital'),
+      row('  Accounts receivable', rows, 'accountsReceivables'),
+      row('  Inventory', rows, 'inventory'),
+      row('  Accounts payable', rows, 'accountsPayables'),
+      row('Other operating CF', rows, 'otherWorkingCapital'),
+      row('Operating cash flow', rows, 'operatingCashFlow', 'M', true),
+      divRow('Investing activities'),
+      row('Capital expenditures', rows, 'capitalExpenditure'),
+      row('Acquisitions (net)', rows, 'acquisitionsNet'),
+      row('Purchases of investments', rows, 'purchasesOfInvestments'),
+      row('Sales of investments', rows, 'salesMaturitiesOfInvestments'),
+      row('Investing cash flow', rows, 'investingCashFlow', 'M', true),
+      divRow('Financing activities'),
+      row('Debt repayment', rows, 'debtRepayment'),
+      row('Common stock issued', rows, 'commonStockIssued'),
+      row('Stock repurchases', rows, 'commonStockRepurchased'),
+      row('Dividends paid', rows, 'dividendsPaid'),
+      row('Financing cash flow', rows, 'financingCashFlow', 'M', true),
+      divRow('Summary'),
+      row('Net change in cash', rows, 'netChangeInCash', 'M', true),
+      row('Free cash flow', rows, 'freeCashFlow', 'M', true),
+    ].join(''))}
+
+    <!-- Balance Sheet -->
+    <div class="shd">Balance sheet · GAAP · all figures in $M</div>
+    ${tbl(bsData, rows => [
+      divRow('Current assets'),
+      row('Cash & equivalents', rows, 'cashAndCashEquivalents', 'M', true),
+      row('Short-term investments', rows, 'shortTermInvestments'),
+      row('Net receivables', rows, 'netReceivables'),
+      row('Inventory', rows, 'inventory'),
+      row('Other current assets', rows, 'otherCurrentAssets'),
+      row('Total current assets', rows, 'totalCurrentAssets', 'M', true),
+      divRow('Non-current assets'),
+      row('PP&E (net)', rows, 'propertyPlantEquipmentNet'),
+      row('Goodwill', rows, 'goodwill'),
+      row('Intangible assets', rows, 'intangibleAssets'),
+      row('LT investments', rows, 'longTermInvestments'),
+      row('Other non-current', rows, 'otherNonCurrentAssets'),
+      row('Total non-current assets', rows, 'totalNonCurrentAssets', 'M', true),
+      row('TOTAL ASSETS', rows, 'totalAssets', 'M', true),
+      divRow('Current liabilities'),
+      row('Accounts payable', rows, 'accountPayables'),
+      row('Short-term debt', rows, 'shortTermDebt'),
+      row('Deferred revenue', rows, 'deferredRevenue'),
+      row('Other current liab.', rows, 'otherCurrentLiabilities'),
+      row('Total current liab.', rows, 'totalCurrentLiabilities', 'M', true),
+      divRow('Non-current liabilities'),
+      row('Long-term debt', rows, 'longTermDebt', 'M', true),
+      row('Deferred tax liab.', rows, 'deferredTaxLiabilitiesNonCurrent'),
+      row('Other non-current liab.', rows, 'otherNonCurrentLiabilities'),
+      row('Total non-current liab.', rows, 'totalNonCurrentLiabilities', 'M', true),
+      row('TOTAL LIABILITIES', rows, 'totalLiabilities', 'M', true),
+      divRow('Stockholders equity'),
+      row('Common stock', rows, 'commonStock'),
+      row('Additional paid-in capital', rows, 'additionalPaidInCapital'),
+      row('Retained earnings', rows, 'retainedEarnings'),
+      row('TOTAL EQUITY', rows, 'totalStockholdersEquity', 'M', true),
+      row('TOTAL LIAB + EQUITY', rows, 'totalLiabilitiesAndStockholdersEquity', 'M', true),
+    ].join(''))}
+
+    <!-- Forward Estimates -->
     <div class="shd">Forward estimates · analyst consensus</div>
     ${fin.fwdPeriod?`
     <table class="ptbl">
@@ -1420,7 +1848,146 @@ function rFinancials(t){
         <tr><td>Fwd P/E</td><td>${peFmt(liveFwdPE)}</td><td>${peFmt(liveFwdPE2)}</td></tr>
         <tr><td>Fwd EV/EBITDA</td><td>${fmtX(liveFwdEvEb)}</td><td></td></tr>
       </tbody>
-    </table>`:'<div style="font-size:11px;color:var(--muted);padding:4px 0">No forward estimates available — pre-revenue or insufficient analyst coverage</div>'}`;
+    </table>`:'<div style="font-size:11px;color:var(--muted);padding:4px 0">No forward estimates — pre-revenue or insufficient analyst coverage</div>'}`;
+}
+
+function setFinPeriod(ticker, period) {
+  if (!finCache[ticker]) return;
+  finCache[ticker]._period = period;
+  renderGrid();
+}
+
+/* ── SEC FILINGS RENDERER ──────────────────────────── */
+function rFilings(t) {
+  const sf = SEC_FILINGS[t];
+  const isETF = ['URA','NLR','NUKZ'].includes(t);
+  const lnk = (label, url, desc='', badge='') => url ? `
+    <div style="padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <a href="${url}" target="_blank" style="font-family:var(--font-mono);font-size:11px;color:var(--accent);text-decoration:none;font-weight:500"
+          onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">↗ ${label}</a>
+        ${badge?`<span style="font-family:var(--font-mono);font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(61,214,140,.12);color:var(--green)">${badge}</span>`:''}
+      </div>
+      ${desc?`<div style="font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--font-mono)">${desc}</div>`:''}
+    </div>` : '';
+
+  if (!sf) return `<div style="font-size:11px;color:var(--muted);padding:4px 0">Filing links not available.</div>`;
+
+  return `
+    <div class="shd">Most recent filings · direct document links</div>
+    ${sf.note?`<div style="font-size:9px;color:var(--amber);font-family:var(--font-mono);margin-bottom:6px;padding:4px 6px;background:rgba(247,201,79,.06);border-radius:3px">⚠ ${sf.note}</div>`:''}
+    ${lnk(isETF?'Annual Report / Prospectus':'Annual Report (10-K) · '+sf.latest10Kdate, sf.latest10K, isETF?'Fund annual report':'Audited full-year financial statements', 'LATEST')}
+    ${lnk(isETF?'Semi-Annual / Quarterly Report':'Most Recent Quarterly (10-Q) · '+sf.latest10Qdate, sf.latest10Q, isETF?'Fund quarterly disclosures':'Unaudited quarterly financial statements', 'LATEST')}
+
+    <div class="shd" style="margin-top:10px">All filings on SEC EDGAR</div>
+    ${lnk(isETF?'All Fund Documents':'All 10-K Annual Reports', sf.allAnnual, 'Full filing history')}
+    ${lnk(isETF?'Fund Literature':'All 10-Q Quarterly Reports', sf.allQuarterly, 'All quarterly filings')}
+    ${lnk('All 8-K Current Reports', sf.all8K, 'Earnings releases, material events, press releases')}
+    ${sf.cik?lnk('All SEC Filings (complete EDGAR history)', `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${sf.cik}&type=&dateb=&owner=include&count=20`, 'Proxy, insider Forms 4, SC 13G/D, and more'):''}
+
+    <div class="shd" style="margin-top:10px">Investor relations & earnings</div>
+    ${lnk('Investor Relations Page', sf.ir, 'Earnings calls, presentations, press releases')}
+    ${lnk('Financial Statements · StockAnalysis', `https://stockanalysis.com/stocks/${t.toLowerCase()}/financials/`, 'Annual income statement, balance sheet, cash flows')}
+    ${lnk('Quarterly Financials · StockAnalysis', `https://stockanalysis.com/stocks/${t.toLowerCase()}/financials/?p=quarterly`, 'Quarterly view of all statements')}
+    ${sf.cik?lnk('Insider Transactions (Form 4)', `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${sf.cik}&type=4&dateb=&owner=include&count=20`, 'All insider buy/sell transactions'):''}
+
+    <div class="shd" style="margin-top:10px">Filing type reference</div>
+    <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);line-height:1.9">
+      ${isETF ? `
+      <div><span style="color:var(--text)">N-CSR</span> — Certified annual shareholder report</div>
+      <div><span style="color:var(--text)">N-PORT</span> — Monthly portfolio holdings</div>
+      <div><span style="color:var(--text)">497</span> — Prospectus / fund supplement</div>
+      ` : `
+      <div><span style="color:var(--text)">10-K</span> — Annual report with audited financials</div>
+      <div><span style="color:var(--text)">10-Q</span> — Quarterly report · unaudited</div>
+      <div><span style="color:var(--text)">8-K</span> — Material events (earnings, deals, management)</div>
+      <div><span style="color:var(--text)">DEF 14A</span> — Proxy: executive comp + shareholder votes</div>
+      <div><span style="color:var(--text)">Form 4</span> — Insider buy/sell transactions</div>
+      <div><span style="color:var(--text)">SC 13G/D</span> — Institutional ownership (≥5%)</div>
+      `}
+    </div>`;
+}
+
+/* ── OWNERSHIP RENDERER ────────────────────────────── */
+function rOwnership(t) {
+  const ow = OWNERSHIP[t];
+  const sf = SEC_FILINGS[t];
+  const isETF = ['URA','NLR','NUKZ'].includes(t);
+
+  if (!ow) return `<div style="font-size:11px;color:var(--muted);padding:4px 0">Ownership data not available.</div>`;
+
+  if (isETF) return `
+    <div class="shd">ETF structure</div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.8;padding:4px 0">
+      ETFs do not have insider ownership or institutional float in the traditional sense.<br>
+      Holdings are disclosed via monthly N-PORT filings with the SEC.<br>
+      <a href="${sf.ir}" target="_blank" style="color:var(--accent);text-decoration:none">↗ View fund holdings on issuer website</a>
+    </div>`;
+
+  const bar = (pct, color) => {
+    if (pct == null) return '<span class="na">N/A</span>';
+    return `<div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px">
+      <div style="height:100%;width:${Math.min(100,pct)}%;background:${color};border-radius:3px"></div>
+    </div><div style="font-family:var(--font-mono);font-size:10px;margin-top:2px">${pct.toFixed(1)}%</div>`;
+  };
+
+  return `
+    <div class="shd">Share structure · as of Mar 2026</div>
+    <div class="kg">
+      ${kv('Shares outstanding', `<span style="font-family:var(--font-mono)">${ow.sharesOut}</span>`)}
+      ${kv('Float', `<span style="font-family:var(--font-mono)">${ow.sharesFloat}</span>`)}
+    </div>
+
+    <div class="shd">Ownership breakdown</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--surface);border-radius:4px;padding:8px">
+        <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px">Insider</div>
+        ${bar(ow.insiderPct, '#f7c94f')}
+      </div>
+      <div style="background:var(--surface);border-radius:4px;padding:8px">
+        <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px">Institutional</div>
+        ${bar(ow.institutionalPct, '#4f8ef7')}
+      </div>
+      <div style="background:var(--surface);border-radius:4px;padding:8px">
+        <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px">Short interest</div>
+        ${bar(ow.shortPct, ow.shortPct>10?'#f74f4f':'#6b7a8d')}
+      </div>
+    </div>
+
+    ${ow.topInsiders.length ? `
+    <div class="shd">Key insiders</div>
+    ${ow.topInsiders.map(i=>`
+      <div style="padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px">${i.name}</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--green)">${i.pct}</span>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">${i.shares} · ${i.action}</div>
+      </div>`).join('')}` : ''}
+
+    ${ow.topInstitutions.length ? `
+    <div class="shd" style="margin-top:10px">Top institutional holders</div>
+    ${ow.topInstitutions.map(i=>`
+      <div style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px">${i.name}</span>
+        <div style="text-align:right">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent)">${i.pct}</span>
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-left:6px">${i.shares}</span>
+        </div>
+      </div>`).join('')}` : ''}
+
+    <div class="shd" style="margin-top:10px">SEC filings · ownership</div>
+    <div style="padding:5px 0">
+      <a href="${ow.insiderFormUrl}" target="_blank" style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-decoration:none"
+        onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">↗ All Form 4 insider transactions on EDGAR</a>
+    </div>
+    ${sf?.cik?`<div style="padding:5px 0">
+      <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${sf.cik}&type=SC+13&dateb=&owner=include&count=20" target="_blank" style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-decoration:none"
+        onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">↗ SC 13G/D institutional ownership filings</a>
+    </div>`:''}
+    <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);margin-top:8px;padding:5px;background:var(--surface);border-radius:3px">
+      Ownership % figures are approximate and sourced from SEC filings as of Q1 2026. Update quarterly after each 13F filing cycle.
+    </div>`;
 }
 
 function renderCard(t){
@@ -1439,7 +2006,7 @@ function renderCard(t){
   }
   const body=!lv
     ?`<div style="display:flex;flex-direction:column;gap:6px">${[95,80,90,70,85].map(w=>`<div class="sk" style="height:10px;width:${w}%"></div>`).join('')}</div>`
-    :activeTab==='overview'?rOverview(t):activeTab==='valuation'?rValuation(t):activeTab==='financials'?rFinancials(t):activeTab==='coverage'?rCoverage(t):rNews(t);
+    :activeTab==='overview'?rOverview(t):activeTab==='valuation'?rValuation(t):activeTab==='financials'?rFinancials(t):activeTab==='coverage'?rCoverage(t):activeTab==='filings'?rFilings(t):activeTab==='ownership'?rOwnership(t):rNews(t);
   return`<div class="card"><div class="ch"><div><div class="tkr">${t}</div><div class="cn">${NAMES[t]}</div></div><div class="pb">${ph}${ch}</div></div>${body}</div>`;
 }
 
@@ -1467,6 +2034,8 @@ function sortedT(){
 
 function renderGrid(){
   const grid = document.getElementById('grid');
+  // Wider cards for financials/filings/ownership tabs
+  grid.className = ['financials','filings','ownership'].includes(activeTab) ? 'grid wide' : 'grid';
 
   if (activeCat !== 'all') {
     // Single category — no section headers, just sort within category
@@ -1513,6 +2082,14 @@ function setTab(tab,el){
     TICKERS.forEach(t => {
       if (live[t] && !live[t].error && !finCache[t]) {
         fetchFinancials(t).then(()=>renderGrid()).catch(()=>{});
+      }
+    });
+  }
+  if (tab==='filings') {
+    // Also trigger financials load since filings tab shows no financial data itself
+    TICKERS.forEach(t => {
+      if (live[t] && !live[t].error && !finCache[t]) {
+        fetchFinancials(t).then(()=>{}).catch(()=>{});
       }
     });
   }

@@ -201,18 +201,28 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 
 <div class="prog"><div class="pf" id="pf"></div></div>
 <div class="peer-panel" id="peerPanel">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
     <div>
       <div style="font-family:var(--font-mono);font-size:13px;font-weight:600">EV-Weighted Indexed Performance</div>
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">Basket returns indexed to 100 at period start · weighted by enterprise value</div>
     </div>
-    <div class="peer-range-btns" id="peerRangeBtns">
-      <button class="peer-range-btn" onclick="setPeerRange('1M',this)">1M</button>
-      <button class="peer-range-btn active" onclick="setPeerRange('YTD',this)">YTD</button>
-      <button class="peer-range-btn" onclick="setPeerRange('1Y',this)">1Y</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;" id="peerTriChart">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">1M</div>
+      <div id="peerChart_1M" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
+    </div>
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">YTD</div>
+      <div id="peerChart_YTD" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
+    </div>
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">1Y</div>
+      <div id="peerChart_1Y" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
     </div>
   </div>
-  <div id="peerChartArea"></div>
+  <div id="peerLegendArea" style="margin-top:10px"></div>
+  <div id="peerTableArea" style="margin-top:6px"></div>
 </div>
 <div class="grid" id="grid"></div>
 
@@ -241,9 +251,9 @@ const EN = {
     ],
     dcf_bear:35,dcf_base:95,dcf_bull:180,wacc:10,tgr:3,er:'miss',en_note:'FY2025: -$0.72 vs -$0.62E; op. expenses $139M vs $52M prior year',es:-16,
     news:[
-      'Atomic Alchemy (Oklo subsidiary) received DOE approval for Nuclear Safety Design Agreement for Groves Isotopes Test Reactor — key regulatory milestone (Mar 19, 2026).',
-      'Goldman Sachs cut PT to $65 (Neutral) citing higher capex of $350M–$450M for 2026; B. Riley cut to $92 (Buy); Citi cut to $73.50 (Mar 18, 2026).',
-      'Liquidity increased to ~$2.6B after Q1 capital raise; first Aurora reactor now targeted for 2028; Meta deal for 1.2 GW Ohio campus intact.'
+      'Oklo received 3 key DOE/NRC regulatory approvals (Mar 17) for Aurora Powerhouse, Atomic Alchemy isotopes reactor, and NRC design engagement — but stock dropped 20% on execution timeline concerns.',
+      'CEO DeWitte and COO Cochran sold $21M in shares on Apr 1 via 10b5-1 plans; UBS cut PT to $60 (Neutral); Jim Cramer called Oklo "not a commercial enterprise" (Apr 7).',
+      'Q1 2026 EPS miss: -$0.27 vs -$0.17E; 2026 cash burn guidance raised to $80M–$100M; cash position ~$2.5B after Jan raise; first Aurora reactor still targeted 2028.'
     ]},
   SMR:{rating:'Hold',pt_consensus:21,pt_low:12,pt_high:60,analyst_count:9,
     cov:[
@@ -256,9 +266,9 @@ const EN = {
     ],
     dcf_bear:2,dcf_base:7,dcf_bull:18,wacc:12,tgr:3,er:'miss',en_note:'Q4 2025: EPS -742% surprise, rev -75% vs est.',es:-742,
     news:[
-      'Fluor Corp sold 71M shares of SMR stock on Feb 13, 2026 for ~$1.35B, reducing holdings from 111.4M to 40.4M shares — significant insider reduction.',
-      'Stock has fallen ~75% from October 2025 highs; consensus Hold with avg PT ~$21 implying ~57% upside from current levels.',
-      'NuScale holds sole U.S. NRC design certification for an SMR; partnered with Oak Ridge National Lab on AI-enabled nuclear design framework (Feb 2026).'
+      'Multiple securities class action lawsuits filed (Mar–Apr 2026) alleging NuScale misled investors about ENTRA1 Energy partnership credentials; lead plaintiff deadline Apr 20.',
+      'Stock down ~80% from Oct 2025 highs to ~$10; Framatome partnership expanded for European fuel fabrication; TVA 6 GW SMR deployment agreement remains intact but no timeline.',
+      'Romania RoPower project received final investment decision approval (Feb 12); first SMR deployment not expected until early 2030s; G&A expenses surged 3,000% due to ENTRA1 write-down.'
     ]},
   NNE:{rating:'Buy',pt_consensus:47,pt_low:9,pt_high:50,analyst_count:4,
     cov:[
@@ -282,9 +292,9 @@ const EN = {
     ],
     dcf_bear:125,dcf_base:298,dcf_bull:390,wacc:9,tgr:2,er:'miss',en_note:'Q4 2025: $0.79 vs $1.41E (-44%); revenue $146.2M slightly below consensus',es:-44,
     news:[
-      'Motley Fool (Mar 24) notes Centrus is one of only 2 nuclear stocks with positive GAAP profits AND positive free cash flow; analysts project EPS of $5.30 by 2027.',
-      'HALEU JV discussions with Oklo at Piketon, Ohio remain the key near-term catalyst; Centrus is the only US-licensed HALEU enrichment facility.',
-      'DOE extended Centrus HALEU production contract through June 2026; free cash flow expected to turn negative beyond 2027 per analyst projections.'
+      'LEU up 115% in past year; only Western-licensed HALEU producer; forward P/S of 8.7x looks cheaper than CCJ at 20.3x per Zacks (Feb 2026).',
+      'Targeting 12 metric tons/year HALEU production by 2030+; $2.3B+ in contingent LEU sales contracts; DOE extended HALEU contract through June 2026.',
+      'HALEU demand estimated at $8B/year by 2035 for advanced reactors; Piketon centrifuge expansion remains key catalyst; Q4 2025 EPS miss of -44% weighed on near-term sentiment.'
     ]},
   CCJ:{rating:'Buy',pt_consensus:124,pt_low:75,pt_high:171,analyst_count:7,
     cov:[
@@ -295,9 +305,9 @@ const EN = {
     ],
     dcf_bear:75,dcf_base:124,dcf_bull:171,wacc:8,tgr:2,er:'beat',en_note:'Q4 2025: $0.50 vs $0.45E (+11%); strong YoY revenue and EBITDA growth',es:11,
     news:[
-      'Motley Fool (Mar 24) calls Cameco the better buy vs Centrus: cheaper valuation, stronger FCF, and analysts expect EPS to nearly double to $1.89 by 2027.',
-      'Signed 9-year uranium supply agreement with India\'s Dept. of Atomic Energy for ~22M lbs of uranium concentrate (Mar 2, 2026).',
-      'Next earnings due Apr 30, 2026; 52-week range $35–$135; Strong Buy consensus with avg PT $136 per 7 analysts.'
+      'CCJ up ~200% in past year, outperforming uranium peers; Zacks (Apr 8) notes strong earnings momentum but forward P/S of 18.2x vs industry 5.5x raises valuation concerns.',
+      'Cigar Lake mine life extended to 2036; McArthur River/Key Lake ramping toward 25M lbs licensed capacity; 2026E deliveries 29–32M lbs at CAD 85–89/lb realized price.',
+      'Next earnings Apr 30, 2026; Citi expects uranium spot to reach $100–$125/lb this year; 49% stake in GLE laser enrichment JV with Silex positions CCJ as integrated fuel cycle player.'
     ]},
   LTBR:{rating:'Buy',pt_consensus:18,pt_low:8,pt_high:28,analyst_count:3,
     cov:[
@@ -320,9 +330,9 @@ const EN = {
     ],
     dcf_bear:177,dcf_base:223,dcf_bull:290,wacc:8,tgr:2,er:'beat',en_note:'Q4 2025: $1.08 vs $0.88E (+23%); revenue $885.8M vs $837.5M est.',es:23,
     news:[
-      'TD Securities initiated Buy with $230 PT on Mar 12, calling BWXT\'s model "very attractive" with strong nuclear heritage and multiple growth vectors.',
-      'FY26 guidance: EPS $4.55–$4.70 (vs $4.30 est.) and revenue ~$3.75B (vs $3.67B est.); backlog grew 50% in 2025 to $7.4B.',
-      'Kinectrics (BWXT division) selected as design/fabrication partner for UK Atomic Energy Authority\'s H3AT facility (Mar 16, 2026).'
+      'BWXT began NRC licensing process for new uranium enrichment facility in Erwin, TN tied to $1.5B NNSA defense nuclear fuels contract (Apr 8, 2026).',
+      'Won $174M naval nuclear fuel contract (Apr 5); partnered with Liburdi GAPCO for nuclear component installation; raised quarterly dividend; selected as subcontractor for NextGen MURR reactor.',
+      'FY2025: revenue $3.2B (+18% YoY), backlog $7.3B (+50%); FY2026 guidance raised to EPS $4.55–$4.70, revenue ~$3.75B; stock up ~18% YTD, ~127% 1Y.'
     ]},
   MIR:{rating:'Buy',pt_consensus:29,pt_low:22,pt_high:34,analyst_count:7,
     cov:[
@@ -1539,27 +1549,32 @@ function rCoverage(t){
 
 const NEWS_SOURCES = {
   OKLO:[
-    {label:'DOE Approves Atomic Alchemy Groves Isotopes Test Reactor',url:'https://finance.yahoo.com/sectors/energy/articles/goldman-sachs-lowers-price-target-193308222.html'},
-    {label:'Goldman Sachs cuts OKLO to $65 — Insider Monkey',url:'https://finance.yahoo.com/sectors/energy/articles/goldman-sachs-lowers-price-target-193308222.html'},
-    {label:'Should You Buy Oklo Below $55? — Motley Fool',url:'https://www.fool.com/investing/2026/03/24/should-you-buy-oklo-stock-while-its-below-55/'},
+    {label:'Oklo Regulatory Wins Spark Questions on Timing — Simply Wall St (Apr 8)',url:'https://simplywall.st/stocks/us/utilities/nyse-oklo/oklo/news/oklo-regulatory-wins-spark-questions-on-commercial-timing-an'},
+    {label:'Oklo Insiders Sell $21M as Cramer Turns Bearish — CoinCentral (Apr 7)',url:'https://coincentral.com/oklo-stock-insiders-sell-over-21m-as-cramer-turns-bearish-heres-why/'},
+    {label:'Nuclear Startup Oklo Scored Key Approvals — Motley Fool (Apr 7)',url:'https://www.fool.com/investing/2026/04/07/nuclear-startup-oklo-regulatory-ok-stock-up/'},
+    {label:'2 Stocks With Monster Potential — Motley Fool (Apr 8)',url:'https://www.fool.com/investing/2026/04/08/stocks-monster-potential-hold-chaos-rivn-oklo/'},
     {label:'OKLO Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/oklo/forecast/'},
   ],
   SMR:[
-    {label:'NuScale Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/smr/forecast/'},
-    {label:'SMR Price Targets — TickerNerd',url:'https://tickernerd.com/stock/smr-forecast/'},
-    {label:'Fluor Sells 71M SMR Shares — SEC Filing',url:'https://finance.yahoo.com/quote/SMR/'},
+    {label:'Where Will NuScale Power Be in 3 Years? — Motley Fool (Apr 9)',url:'https://www.fool.com/investing/2026/04/09/where-will-nuscale-power-stock-be-in-3-years/'},
+    {label:'NuScale Down 80% — Great News for Long-Term Investors (Apr 3)',url:'https://www.fool.com/investing/2026/04/03/smr-is-down-x-and-i-think-thats-the-best-news/'},
+    {label:'SMR Faces String of Investor Lawsuits (Apr 7)',url:'https://www.timothysykes.com/news/nuscale-power-corporation-smr-news-2026_04_07-2/'},
+    {label:'NuScale vs BWX Technologies — Motley Fool (Apr 2)',url:'https://www.fool.com/investing/2026/04/02/nuscale-power-vs-bwx-technologies-which-nuclear-en/'},
+    {label:'SMR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/SMR/'},
   ],
   NNE:[
     {label:'NNE Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/nne/forecast/'},
     {label:'NNE Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/NNE/'},
   ],
   LEU:[
-    {label:'Cameco vs Centrus: Better Nuclear Stock? — Motley Fool',url:'https://www.fool.com/investing/2026/03/24/better-nuclear-energy-stock-cameco-ccj-vs-leu/'},
+    {label:'Centrus Energy vs Cameco: Which Has an Edge? — Zacks (Feb 23)',url:'https://www.nasdaq.com/articles/centrus-energy-vs-cameco-which-uranium-stock-has-edge-right-now'},
+    {label:'Better Nuclear Stock: CCJ vs LEU — Motley Fool (Mar 24)',url:'https://www.fool.com/investing/2026/03/24/better-nuclear-energy-stock-cameco-ccj-vs-leu/'},
     {label:'LEU Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/leu/forecast/'},
     {label:'LEU Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/LEU/'},
   ],
   CCJ:[
-    {label:'Cameco vs Centrus: Better Nuclear Stock? — Motley Fool',url:'https://www.fool.com/investing/2026/03/24/better-nuclear-energy-stock-cameco-ccj-vs-leu/'},
+    {label:'Cameco Surges 200% in a Year: Buy, Sell or Hold? — Zacks (Apr 8)',url:'https://www.zacks.com/stock/news/2896561/cameco-surges-200-in-a-year-buy-sell-or-hold-the-stock'},
+    {label:'Cameco Is One of 2026\'s Biggest Winners — Motley Fool (Apr 9)',url:'https://www.fool.com/investing/2026/04/09/ccj-is-one-of-2026s-biggest-winners-heres-t/'},
     {label:'CCJ Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/ccj/forecast/'},
     {label:'CCJ Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/CCJ/'},
   ],
@@ -1568,14 +1583,14 @@ const NEWS_SOURCES = {
     {label:'LTBR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/LTBR/'},
   ],
   BWXT:[
-    {label:'TD Securities Initiates BWXT Buy $230 — Insider Monkey',url:'https://finance.yahoo.com/sectors/energy/articles/td-securities-initiates-coverage-bwx-193259052.html'},
+    {label:'BWXT New Enrichment Facility Licensing — Simply Wall St (Apr 8)',url:'https://simplywall.st/stocks/us/capital-goods/nyse-bwxt/bwx-technologies/news/bwx-technologies-new-enrichment-move-and-what-it-means-for-v'},
+    {label:'BWXT Up 6.1% After $174M Naval Fuel Contract — Simply Wall St (Apr 5)',url:'https://simplywall.st/stocks/us/capital-goods/nyse-bwxt/bwx-technologies/news/bwx-technologies-bwxt-is-up-61-after-landing-new-us174-milli'},
+    {label:'BWXT NextGen MURR Reactor Subcontract Win (Apr 2)',url:'https://simplywall.st/stocks/us/capital-goods/nyse-bwxt/bwx-technologies/news/a-look-at-bwx-technologies-bwxt-valuation-after-nextgen-murr'},
     {label:'BWXT Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
-    {label:'BWXT Q4 Earnings — SEC 8-K',url:'https://www.sec.gov/Archives/edgar/data/0001486957/000148695726000005/bwxt_123125xerexhibit991.htm'},
   ],
   MIR:[
     {label:'MIR Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/mir/forecast/'},
     {label:'MIR Analyst Ratings — TipRanks',url:'https://www.tipranks.com/stocks/mir/forecast'},
-    {label:'Mirion FY2026 Earnings Guidance — Ticker Report',url:'https://www.tickerreport.com/banking-finance/13343171/mirion-technologies-nysemir-releases-fy-2026-earnings-guidance.html'},
     {label:'MIR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/MIR/'},
   ],
   GHM:[
@@ -1585,7 +1600,6 @@ const NEWS_SOURCES = {
   ],
   NKLR:[
     {label:'NKLR Company Overview — StockAnalysis',url:'https://stockanalysis.com/stocks/nklr/'},
-    {label:'Terra Innovatum SPAC Merger — Neutron Bytes',url:'https://neutronbytes.com/2025/10/03/terra-innovatum-its-sets-sights-on-230m-spac/'},
     {label:'NKLR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/NKLR/'},
   ],
   IMSR:[
@@ -1595,28 +1609,25 @@ const NEWS_SOURCES = {
   SILXY:[
     {label:'Silex Systems ADR — Nasdaq',url:'https://www.nasdaq.com/market-activity/stocks/silxy'},
     {label:'SILXY Quote — CNBC',url:'https://www.cnbc.com/quotes/SILXY'},
-    {label:'Silex Systems Overview — Morningstar',url:'https://www.morningstar.com/stocks/pinx/silxy/quote'},
   ],
   URA:[
     {label:'Global X Uranium ETF — ETF Database',url:'https://etfdb.com/etf/URA/'},
-    {label:'Best Nuclear ETFs 2026 — Motley Fool',url:'https://www.fool.com/investing/stock-market/market-sectors/energy/nuclear/nuclear-etfs/'},
     {label:'URA Quote & Holdings — Yahoo Finance',url:'https://finance.yahoo.com/quote/URA/'},
   ],
   NLR:[
     {label:'VanEck Uranium & Nuclear ETF — ETF Database',url:'https://etfdb.com/etf/NLR/'},
-    {label:'NLR Overview — StockAnalysis',url:'https://stockanalysis.com/etf/nlr/'},
     {label:'NLR Quote & Holdings — Yahoo Finance',url:'https://finance.yahoo.com/quote/NLR/'},
   ],
   NUKZ:[
     {label:'Range Nuclear Renaissance ETF — Yahoo Finance',url:'https://finance.yahoo.com/quote/NUKZ/'},
-    {label:'NUKZ vs URA vs NLR Comparison — ETF Trends',url:'https://www.etftrends.com/nuclear-energy-content-hub/'},
+    {label:'NUKZ vs URA vs NLR — ETF Trends',url:'https://www.etftrends.com/nuclear-energy-content-hub/'},
   ],
 };
 
 function rNews(t){
   const src = NEWS_SOURCES[t]||[];
   return EN[t].news.map(n=>`<div class="ni">${n}</div>`).join('')
-    + (src.length ? `<div class="shd" style="margin-top:10px">Sources · March 26, 2026</div>`
+    + (src.length ? `<div class="shd" style="margin-top:10px">Sources · April 10, 2026</div>`
         + src.map(s=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);">
           <a href="${s.url}" target="_blank" style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">↗ ${s.label}</a>
         </div>`).join('') : '');
@@ -2142,132 +2153,156 @@ function getBasketReturn(catKey, fromDate) {
 }
 
 function drawPeerChart() {
-  const fromDate = getPeerFromDate(peerRange);
+  const ranges = ['1M', 'YTD', '1Y'];
   const baskets = Object.keys(CATS);
   const colors = { industrials: '#4f8ef7', smr: '#3dd68c', fuel: '#f7c94f', etf: '#a78bfa' };
-  const basketData = {};
-  let allVals = [];
 
-  baskets.forEach(key => {
-    if (peerHidden[key]) return;
-    const pts = computeBasketIndex(key, fromDate);
-    basketData[key] = pts;
-    pts.forEach(p => allVals.push(p.v));
+  ranges.forEach(range => {
+    const fromDate = getPeerFromDate(range);
+    const basketData = {};
+    let allVals = [];
+
+    baskets.forEach(key => {
+      if (peerHidden[key]) return;
+      const pts = computeBasketIndex(key, fromDate);
+      basketData[key] = pts;
+      pts.forEach(p => allVals.push(p.v));
+    });
+
+    const container = document.getElementById(`peerChart_${range}`);
+    if (!container) return;
+
+    if (allVals.length === 0) {
+      container.innerHTML = '<div style="height:180px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">Loading…</div>';
+      return;
+    }
+
+    const W = 320, H = 200, PAD = 42, PADR = 52, PADT = 12, PADB = 24;
+    const minV = Math.min(...allVals, 100) - 2;
+    const maxV = Math.max(...allVals, 100) + 2;
+    const rangeV = maxV - minV || 1;
+
+    let allDates = new Set();
+    baskets.forEach(key => {
+      if (basketData[key]) basketData[key].forEach(p => allDates.add(p.d));
+    });
+    const dates = [...allDates].sort();
+    if (dates.length < 2) { container.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">Insufficient data</div>'; return; }
+
+    const xFn = (d) => PAD + ((dates.indexOf(d)) / (dates.length - 1)) * (W - PAD - PADR);
+    const yFn = (v) => PADT + ((maxV - v) / rangeV) * (H - PADT - PADB);
+
+    // Grid lines — aim for 5-7 ticks regardless of range
+    const gridLines = [];
+    const yTicks = [];
+    const rawStep = rangeV / 6;
+    const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const nice = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500];
+    const step = nice.find(n => n * mag >= rawStep) * mag || rawStep;
+    for (let v = Math.ceil(minV / step) * step; v <= maxV; v += step) {
+      const y = yFn(v);
+      gridLines.push(`<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PADR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5"/>`);
+      yTicks.push(`<text x="${PAD - 5}" y="${(y + 3).toFixed(1)}" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="end">${v.toFixed(0)}</text>`);
+    }
+    // 100 baseline
+    const y100 = yFn(100);
+    gridLines.push(`<line x1="${PAD}" y1="${y100.toFixed(1)}" x2="${W - PADR}" y2="${y100.toFixed(1)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>`);
+
+    // Date labels
+    const dateLabels = [];
+    const labelCount = Math.min(4, dates.length);
+    for (let i = 0; i < labelCount; i++) {
+      const idx = Math.round(i * (dates.length - 1) / (labelCount - 1));
+      const d = dates[idx];
+      const x = xFn(d);
+      const label = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dateLabels.push(`<text x="${x.toFixed(1)}" y="${H - 4}" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle">${label}</text>`);
+    }
+
+    // Lines
+    const lines = [];
+    const rawEndLabels = [];
+    baskets.forEach(key => {
+      if (peerHidden[key] || !basketData[key] || basketData[key].length < 2) return;
+      const pts = basketData[key];
+      const color = colors[key];
+      const pathD = pts.map((p, i) => {
+        const x = xFn(p.d);
+        const y = yFn(p.v);
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      lines.push(`<path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`);
+
+      const last = pts[pts.length - 1];
+      const lx = xFn(last.d);
+      const ly = yFn(last.v);
+      const ret = (last.v - 100).toFixed(1);
+      const sign = last.v >= 100 ? '+' : '';
+      lines.push(`<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="${color}"/>`);
+      rawEndLabels.push({ x: lx, y: ly, color, text: `${sign}${ret}%` });
+    });
+
+    // De-overlap end labels (push apart if within 10px vertically)
+    rawEndLabels.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < rawEndLabels.length; i++) {
+      const gap = rawEndLabels[i].y - rawEndLabels[i - 1].y;
+      if (gap < 11) {
+        const shift = (11 - gap) / 2;
+        rawEndLabels[i - 1].y -= shift;
+        rawEndLabels[i].y += shift;
+      }
+    }
+    const endLabels = rawEndLabels.map(l =>
+      `<text x="${(l.x + 6).toFixed(1)}" y="${(l.y + 3).toFixed(1)}" fill="${l.color}" font-size="9" font-family="var(--font-mono)" font-weight="600">${l.text}</text>`
+    );
+
+    // Crosshair
+    const crossId = `peerCross_${range}`;
+    const ttId = `peerTT_${range}`;
+
+    container.innerHTML = `<div style="position:relative;cursor:crosshair;" id="peerWrap_${range}"
+      onmousemove="peerMiniHover(event,'${range}')" onmouseleave="peerMiniLeave('${range}')">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        ${gridLines.join('')}
+        ${yTicks.join('')}
+        ${dateLabels.join('')}
+        ${lines.join('')}
+        ${endLabels.join('')}
+        <line id="${crossId}" x1="0" y1="${PADT}" x2="0" y2="${H - PADB}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
+      </svg>
+      <div class="peer-tooltip" id="${ttId}">
+        <div class="peer-tooltip-box" id="${ttId}_box"></div>
+      </div>
+    </div>`;
+
+    // Store meta for hover
+    window[`_peerMini_${range}`] = { dates, W, H, PAD, PADR, PADT, PADB, baskets: baskets.filter(k => !peerHidden[k]), basketData, colors, minV, maxV, rangeV };
   });
 
-  if (allVals.length === 0) {
-    document.getElementById('peerChartArea').innerHTML = '<div style="height:280px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--muted)">Loading price data… click Refresh if needed</div>';
-    return;
-  }
-
-  const W = 900, H = 280, PAD = 45, PADR = 65, PADT = 20, PADB = 30;
-  const minV = Math.min(...allVals, 100) - 2;
-  const maxV = Math.max(...allVals, 100) + 2;
-  const rangeV = maxV - minV || 1;
-
-  // Collect all unique dates
-  let allDates = new Set();
-  baskets.forEach(key => {
-    if (basketData[key]) basketData[key].forEach(p => allDates.add(p.d));
-  });
-  const dates = [...allDates].sort();
-  if (dates.length < 2) return;
-
-  const xFn = (d) => PAD + ((dates.indexOf(d)) / (dates.length - 1)) * (W - PAD - PADR);
-  const yFn = (v) => PADT + ((maxV - v) / rangeV) * (H - PADT - PADB);
-
-  // Grid lines
-  const gridLines = [];
-  const yTicks = [];
-  const step = rangeV > 40 ? 10 : rangeV > 20 ? 5 : 2;
-  for (let v = Math.ceil(minV / step) * step; v <= maxV; v += step) {
-    const y = yFn(v);
-    gridLines.push(`<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PADR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5"/>`);
-    yTicks.push(`<text x="${PAD - 6}" y="${(y + 3).toFixed(1)}" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="end">${v.toFixed(0)}</text>`);
-  }
-
-  // 100 baseline
-  const y100 = yFn(100);
-  gridLines.push(`<line x1="${PAD}" y1="${y100.toFixed(1)}" x2="${W - PADR}" y2="${y100.toFixed(1)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>`);
-  yTicks.push(`<text x="${PAD - 6}" y="${(y100 + 3).toFixed(1)}" fill="var(--text)" font-size="9" font-family="var(--font-mono)" text-anchor="end" font-weight="600">100</text>`);
-
-  // Date labels
-  const dateLabels = [];
-  const labelCount = Math.min(6, dates.length);
-  for (let i = 0; i < labelCount; i++) {
-    const idx = Math.round(i * (dates.length - 1) / (labelCount - 1));
-    const d = dates[idx];
-    const x = xFn(d);
-    const label = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    dateLabels.push(`<text x="${x.toFixed(1)}" y="${H - 6}" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">${label}</text>`);
-  }
-
-  // Draw lines
-  const lines = [];
-  const endLabels = [];
-  baskets.forEach(key => {
-    if (peerHidden[key] || !basketData[key] || basketData[key].length < 2) return;
-    const pts = basketData[key];
-    const color = colors[key];
-    const pathD = pts.map((p, i) => {
-      const x = xFn(p.d);
-      const y = yFn(p.v);
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
-    lines.push(`<path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`);
-
-    // End dot and label
-    const last = pts[pts.length - 1];
-    const lx = xFn(last.d);
-    const ly = yFn(last.v);
-    const ret = (last.v - 100).toFixed(1);
-    const sign = last.v >= 100 ? '+' : '';
-    lines.push(`<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3.5" fill="${color}"/>`);
-    endLabels.push(`<text x="${(lx + 8).toFixed(1)}" y="${(ly + 3).toFixed(1)}" fill="${color}" font-size="10" font-family="var(--font-mono)" font-weight="600">${sign}${ret}%</text>`);
-  });
-
-  // Crosshair line
-  const crossId = 'peerCross';
-  const ttId = 'peerTT';
-
-  const svg = `<div class="peer-chart-wrap" id="peerChartWrap"
-    onmousemove="peerChartHover(event)" onmouseleave="peerChartLeave()">
-    <svg class="peer-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      ${gridLines.join('')}
-      ${yTicks.join('')}
-      ${dateLabels.join('')}
-      ${lines.join('')}
-      ${endLabels.join('')}
-      <line id="${crossId}" x1="0" y1="${PADT}" x2="0" y2="${H - PADB}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
-    </svg>
-    <div class="peer-tooltip" id="${ttId}">
-      <div class="peer-tooltip-box" id="${ttId}_box"></div>
-    </div>
-  </div>`;
-
-  // Legend
+  // Shared legend with ticker listings
   const legend = baskets.map(key => {
     const cat = CATS[key];
     const hidden = peerHidden[key];
-    const lastPts = basketData[key];
-    const ret = lastPts && lastPts.length > 1 ? (lastPts[lastPts.length - 1].v - 100).toFixed(1) : '—';
-    const sign = ret !== '—' && parseFloat(ret) >= 0 ? '+' : '';
-    return `<div class="peer-legend-item" onclick="togglePeerBasket('${key}')" style="opacity:${hidden ? 0.3 : 1}">
-      <div class="peer-legend-dot" style="background:${colors[key]}"></div>
-      <span style="color:${hidden ? 'var(--muted)' : 'var(--text)'}">${cat.label}</span>
-      <span style="color:${hidden ? 'var(--muted)' : colors[key]};font-weight:500">${sign}${ret}%</span>
+    const tickers = cat.tickers.join(', ');
+    return `<div class="peer-legend-item" onclick="togglePeerBasket('${key}')" style="opacity:${hidden ? 0.3 : 1};flex-direction:column;align-items:flex-start;gap:1px">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="peer-legend-dot" style="background:${colors[key]}"></div>
+        <span style="color:${hidden ? 'var(--muted)' : 'var(--text)'}">${cat.label}</span>
+      </div>
+      <span style="font-size:9px;color:var(--muted);margin-left:15px">${tickers}</span>
     </div>`;
   }).join('');
+  document.getElementById('peerLegendArea').innerHTML = `<div class="peer-legend">${legend}</div>`;
 
-  // Performance summary table
-  const ranges = [
+  // Performance table
+  const tRanges = [
     { label: '1M', from: daysAgo(30) },
     { label: 'YTD', from: ytdStart() },
     { label: '1Y', from: oneYrAgo() },
   ];
   let perfRows = baskets.map(key => {
     const cat = CATS[key];
-    const cells = ranges.map(r => {
+    const cells = tRanges.map(r => {
       const ret = getBasketReturn(key, r.from);
       if (ret == null) return '<td><span class="na">N/A</span></td>';
       const c = ret >= 0 ? 'pos' : 'neg';
@@ -2277,22 +2312,17 @@ function drawPeerChart() {
     return `<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colors[key]};margin-right:6px;vertical-align:middle"></span>${cat.label}</td>${cells}</tr>`;
   }).join('');
 
-  const perfTable = `<table class="peer-perf-tbl">
+  document.getElementById('peerTableArea').innerHTML = `<table class="peer-perf-tbl">
     <thead><tr><th>Basket (EV-weighted)</th><th>1M</th><th>YTD</th><th>1Y</th></tr></thead>
     <tbody>${perfRows}</tbody>
   </table>`;
-
-  // Store chart metadata for hover
-  window._peerChartMeta = { dates, W, H, PAD, PADR, PADT, PADB, baskets: baskets.filter(k => !peerHidden[k]), basketData, colors, minV, maxV, rangeV };
-
-  document.getElementById('peerChartArea').innerHTML = svg + `<div class="peer-legend">${legend}</div>` + perfTable;
 }
 
-function peerChartHover(e) {
-  const meta = window._peerChartMeta;
+function peerMiniHover(e, range) {
+  const meta = window[`_peerMini_${range}`];
   if (!meta) return;
   const { dates, W, H, PAD, PADR, PADT, PADB, baskets, basketData, colors } = meta;
-  const wrap = document.getElementById('peerChartWrap');
+  const wrap = document.getElementById(`peerWrap_${range}`);
   const rect = wrap.getBoundingClientRect();
   const mouseX = ((e.clientX - rect.left) / rect.width) * W;
   const clampedX = Math.max(PAD, Math.min(W - PADR, mouseX));
@@ -2300,18 +2330,17 @@ function peerChartHover(e) {
   const safeIdx = Math.max(0, Math.min(dates.length - 1, idx));
   const d = dates[safeIdx];
 
-  const cross = document.getElementById('peerCross');
+  const cross = document.getElementById(`peerCross_${range}`);
   if (cross) {
     const x = PAD + (safeIdx / (dates.length - 1)) * (W - PAD - PADR);
     cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('opacity', '0.6');
   }
 
   const dateStr = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  let rows = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-bottom:4px">${dateStr}</div>`;
+  let rows = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-bottom:3px">${dateStr}</div>`;
   baskets.forEach(key => {
     const pts = basketData[key];
     if (!pts) return;
-    // Find closest point
     let val = null;
     for (let i = pts.length - 1; i >= 0; i--) {
       if (pts[i].d <= d) { val = pts[i].v; break; }
@@ -2321,37 +2350,30 @@ function peerChartHover(e) {
       const ret = (val - 100).toFixed(1);
       const sign = parseFloat(ret) >= 0 ? '+' : '';
       const c = parseFloat(ret) >= 0 ? 'var(--green)' : 'var(--red)';
-      rows += `<div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0;font-family:var(--font-mono);font-size:10px">
+      rows += `<div style="display:flex;justify-content:space-between;gap:10px;padding:1px 0;font-family:var(--font-mono);font-size:9px">
         <span style="color:${colors[key]}">${CATS[key].label.split(' ')[0]}</span>
         <span style="color:${c};font-weight:500">${sign}${ret}%</span>
       </div>`;
     }
   });
 
-  const tt = document.getElementById('peerTT');
-  const ttBox = document.getElementById('peerTT_box');
+  const tt = document.getElementById(`peerTT_${range}`);
+  const ttBox = document.getElementById(`peerTT_${range}_box`);
   if (tt && ttBox) {
     ttBox.innerHTML = rows;
     tt.style.display = 'block';
     const pxX = (clampedX / W) * rect.width;
-    const ttW = 170;
+    const ttW = 150;
     tt.style.left = (pxX + ttW + 10 > rect.width ? pxX - ttW - 4 : pxX + 8) + 'px';
-    tt.style.top = '20px';
+    tt.style.top = '10px';
   }
 }
 
-function peerChartLeave() {
-  const tt = document.getElementById('peerTT');
+function peerMiniLeave(range) {
+  const tt = document.getElementById(`peerTT_${range}`);
   if (tt) tt.style.display = 'none';
-  const cross = document.getElementById('peerCross');
+  const cross = document.getElementById(`peerCross_${range}`);
   if (cross) cross.setAttribute('opacity', '0');
-}
-
-function setPeerRange(range, btn) {
-  peerRange = range;
-  document.querySelectorAll('.peer-range-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  drawPeerChart();
 }
 
 function togglePeerBasket(key) {

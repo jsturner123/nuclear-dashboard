@@ -44,7 +44,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 .prog{height:2px;background:var(--surface2);}
 .pf{height:100%;background:var(--accent);transition:width .4s;width:0%;}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1px;background:var(--border);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1px;background:var(--border);}
 .grid.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr));}
 .card{background:var(--bg);padding:15px 17px;transition:background .12s;}
 .card:hover{background:var(--surface);}
@@ -126,27 +126,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 .chart-tooltip-price{font-family:var(--font-mono);font-size:12px;font-weight:600;}
 .chart-meta{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:3px;}
 
-/* ── PEER BASKET CHART ── */
-.peer-panel{padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface);display:none;}
-.peer-panel.show{display:block;}
-.peer-chart-wrap{position:relative;width:100%;height:280px;cursor:crosshair;margin:10px 0;}
-.peer-chart-svg{width:100%;height:100%;display:block;}
-.peer-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-family:var(--font-mono);font-size:10px;}
-.peer-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;transition:opacity .15s;}
-.peer-legend-item:hover{opacity:.8;}
-.peer-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
-.peer-range-btns{display:flex;gap:4px;margin-bottom:8px;}
-.peer-range-btn{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:2px;cursor:pointer;transition:all .1s;}
-.peer-range-btn:hover{color:var(--text);border-color:var(--border2);}
-.peer-range-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(79,142,247,.08);}
-.peer-tooltip{position:absolute;top:0;left:0;pointer-events:none;display:none;z-index:10;}
-.peer-tooltip-box{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:6px 10px;white-space:nowrap;min-width:140px;}
-.peer-perf-tbl{width:100%;border-collapse:collapse;margin-top:12px;}
-.peer-perf-tbl th{font-family:var(--font-mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:4px 8px 6px;text-align:right;border-bottom:1px solid var(--border);}
-.peer-perf-tbl th:first-child{text-align:left;}
-.peer-perf-tbl td{font-family:var(--font-mono);font-size:11px;padding:5px 8px;text-align:right;border-top:1px solid var(--border);}
-.peer-perf-tbl td:first-child{text-align:left;color:var(--muted);font-size:10px;}
-
 </style>
 </head>
 <body>
@@ -154,7 +133,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 <div class="header">
   <div>
     <h1>NUCLEAR EQUITY DASHBOARD</h1>
-    <p>OKLO · SMR · NNE · LEU · CCJ · LTBR · BWXT · MIR · GHM · NKLR · IMSR · SILXY · URA · NLR · NUKZ</p>
+    <p>OKLO · SMR · NNE · LEU · CCJ · LTBR · BWXT · MIR · GHM · NKLR · IMSR · SILXY · URA · NLR · NUKZ · XE</p>
   </div>
   <div class="hdr-r">
     <span class="ts" id="ts">—</span>
@@ -185,7 +164,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
     <button class="tab" onclick="setTab('filings',this)">SEC Filings</button>
     <button class="tab" onclick="setTab('ownership',this)">Ownership</button>
     <button class="tab" onclick="setTab('news',this)">News</button>
-    <button class="tab" onclick="setTab('peers',this)">Peer Baskets</button>
   </div>
   <div class="sorts">
     <span class="slbl">SORT:</span>
@@ -200,30 +178,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 </div>
 
 <div class="prog"><div class="pf" id="pf"></div></div>
-<div class="peer-panel" id="peerPanel">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-    <div>
-      <div style="font-family:var(--font-mono);font-size:13px;font-weight:600">EV-Weighted Indexed Performance</div>
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">Basket returns indexed to 100 at period start · weighted by enterprise value</div>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;" id="peerTriChart">
-    <div>
-      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">1M</div>
-      <div id="peerChart_1M" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
-    </div>
-    <div>
-      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">YTD</div>
-      <div id="peerChart_YTD" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
-    </div>
-    <div>
-      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">1Y</div>
-      <div id="peerChart_1Y" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
-    </div>
-  </div>
-  <div id="peerLegendArea" style="margin-top:10px"></div>
-  <div id="peerTableArea" style="margin-top:6px"></div>
-</div>
 <div class="grid" id="grid"></div>
 
 <script>
@@ -232,13 +186,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 const KEY  = 'uhj6YB5Di0arJLuib4e6SfqgDKa3d1II';
 const BASE = 'https://financialmodelingprep.com/stable';
 
-const TICKERS = ['OKLO','SMR','NNE','LEU','CCJ','LTBR','BWXT','MIR','GHM','NKLR','IMSR','SILXY','URA','NLR','NUKZ'];
+const TICKERS = ['OKLO','SMR','NNE','LEU','CCJ','LTBR','BWXT','MIR','GHM','NKLR','IMSR','SILXY','URA','NLR','NUKZ','XE'];
 const NAMES = {
   OKLO:'Oklo Inc.',SMR:'NuScale Power',NNE:'Nano Nuclear Energy',
   LEU:'Centrus Energy',CCJ:'Cameco Corp.',LTBR:'Lightbridge Corp.',BWXT:'BWX Technologies',
   MIR:'Mirion Technologies',GHM:'Graham Corp.',NKLR:'Terra Innovatum',
   IMSR:'Terrestrial Energy',SILXY:'Silex Systems ADR',
-  URA:'Global X Uranium ETF',NLR:'VanEck Uranium & Nuclear ETF',NUKZ:'Range Nuclear ETF'
+  URA:'Global X Uranium ETF',NLR:'VanEck Uranium & Nuclear ETF',NUKZ:'Range Nuclear ETF',
+  XE:'X-energy Inc.'
 };
 const EN = {
   OKLO:{rating:'Buy',pt_consensus:102,pt_low:65,pt_high:150,analyst_count:14,
@@ -251,9 +206,9 @@ const EN = {
     ],
     dcf_bear:35,dcf_base:95,dcf_bull:180,wacc:10,tgr:3,er:'miss',en_note:'FY2025: -$0.72 vs -$0.62E; op. expenses $139M vs $52M prior year',es:-16,
     news:[
-      'Oklo received 3 key DOE/NRC regulatory approvals (Mar 17) for Aurora Powerhouse, Atomic Alchemy isotopes reactor, and NRC design engagement — but stock dropped 20% on execution timeline concerns.',
-      'CEO DeWitte and COO Cochran sold $21M in shares on Apr 1 via 10b5-1 plans; UBS cut PT to $60 (Neutral); Jim Cramer called Oklo "not a commercial enterprise" (Apr 7).',
-      'Q1 2026 EPS miss: -$0.27 vs -$0.17E; 2026 cash burn guidance raised to $80M–$100M; cash position ~$2.5B after Jan raise; first Aurora reactor still targeted 2028.'
+      'Atomic Alchemy (Oklo subsidiary) received DOE approval for Nuclear Safety Design Agreement for Groves Isotopes Test Reactor — key regulatory milestone (Mar 19, 2026).',
+      'Goldman Sachs cut PT to $65 (Neutral) citing higher capex of $350M–$450M for 2026; B. Riley cut to $92 (Buy); Citi cut to $73.50 (Mar 18, 2026).',
+      'Liquidity increased to ~$2.6B after Q1 capital raise; first Aurora reactor now targeted for 2028; Meta deal for 1.2 GW Ohio campus intact.'
     ]},
   SMR:{rating:'Hold',pt_consensus:21,pt_low:12,pt_high:60,analyst_count:9,
     cov:[
@@ -266,9 +221,9 @@ const EN = {
     ],
     dcf_bear:2,dcf_base:7,dcf_bull:18,wacc:12,tgr:3,er:'miss',en_note:'Q4 2025: EPS -742% surprise, rev -75% vs est.',es:-742,
     news:[
-      'Multiple securities class action lawsuits filed (Mar–Apr 2026) alleging NuScale misled investors about ENTRA1 Energy partnership credentials; lead plaintiff deadline Apr 20.',
-      'Stock down ~80% from Oct 2025 highs to ~$10; Framatome partnership expanded for European fuel fabrication; TVA 6 GW SMR deployment agreement remains intact but no timeline.',
-      'Romania RoPower project received final investment decision approval (Feb 12); first SMR deployment not expected until early 2030s; G&A expenses surged 3,000% due to ENTRA1 write-down.'
+      'Fluor Corp sold 71M shares of SMR stock on Feb 13, 2026 for ~$1.35B, reducing holdings from 111.4M to 40.4M shares — significant insider reduction.',
+      'Stock has fallen ~75% from October 2025 highs; consensus Hold with avg PT ~$21 implying ~57% upside from current levels.',
+      'NuScale holds sole U.S. NRC design certification for an SMR; partnered with Oak Ridge National Lab on AI-enabled nuclear design framework (Feb 2026).'
     ]},
   NNE:{rating:'Buy',pt_consensus:47,pt_low:9,pt_high:50,analyst_count:4,
     cov:[
@@ -292,9 +247,9 @@ const EN = {
     ],
     dcf_bear:125,dcf_base:298,dcf_bull:390,wacc:9,tgr:2,er:'miss',en_note:'Q4 2025: $0.79 vs $1.41E (-44%); revenue $146.2M slightly below consensus',es:-44,
     news:[
-      'LEU up 115% in past year; only Western-licensed HALEU producer; forward P/S of 8.7x looks cheaper than CCJ at 20.3x per Zacks (Feb 2026).',
-      'Targeting 12 metric tons/year HALEU production by 2030+; $2.3B+ in contingent LEU sales contracts; DOE extended HALEU contract through June 2026.',
-      'HALEU demand estimated at $8B/year by 2035 for advanced reactors; Piketon centrifuge expansion remains key catalyst; Q4 2025 EPS miss of -44% weighed on near-term sentiment.'
+      'Motley Fool (Mar 24) notes Centrus is one of only 2 nuclear stocks with positive GAAP profits AND positive free cash flow; analysts project EPS of $5.30 by 2027.',
+      'HALEU JV discussions with Oklo at Piketon, Ohio remain the key near-term catalyst; Centrus is the only US-licensed HALEU enrichment facility.',
+      'DOE extended Centrus HALEU production contract through June 2026; free cash flow expected to turn negative beyond 2027 per analyst projections.'
     ]},
   CCJ:{rating:'Buy',pt_consensus:124,pt_low:75,pt_high:171,analyst_count:7,
     cov:[
@@ -305,9 +260,9 @@ const EN = {
     ],
     dcf_bear:75,dcf_base:124,dcf_bull:171,wacc:8,tgr:2,er:'beat',en_note:'Q4 2025: $0.50 vs $0.45E (+11%); strong YoY revenue and EBITDA growth',es:11,
     news:[
-      'CCJ up ~200% in past year, outperforming uranium peers; Zacks (Apr 8) notes strong earnings momentum but forward P/S of 18.2x vs industry 5.5x raises valuation concerns.',
-      'Cigar Lake mine life extended to 2036; McArthur River/Key Lake ramping toward 25M lbs licensed capacity; 2026E deliveries 29–32M lbs at CAD 85–89/lb realized price.',
-      'Next earnings Apr 30, 2026; Citi expects uranium spot to reach $100–$125/lb this year; 49% stake in GLE laser enrichment JV with Silex positions CCJ as integrated fuel cycle player.'
+      'Motley Fool (Mar 24) calls Cameco the better buy vs Centrus: cheaper valuation, stronger FCF, and analysts expect EPS to nearly double to $1.89 by 2027.',
+      'Signed 9-year uranium supply agreement with India\'s Dept. of Atomic Energy for ~22M lbs of uranium concentrate (Mar 2, 2026).',
+      'Next earnings due Apr 30, 2026; 52-week range $35–$135; Strong Buy consensus with avg PT $136 per 7 analysts.'
     ]},
   LTBR:{rating:'Buy',pt_consensus:18,pt_low:8,pt_high:28,analyst_count:3,
     cov:[
@@ -330,9 +285,9 @@ const EN = {
     ],
     dcf_bear:177,dcf_base:223,dcf_bull:290,wacc:8,tgr:2,er:'beat',en_note:'Q4 2025: $1.08 vs $0.88E (+23%); revenue $885.8M vs $837.5M est.',es:23,
     news:[
-      'BWXT began NRC licensing process for new uranium enrichment facility in Erwin, TN tied to $1.5B NNSA defense nuclear fuels contract (Apr 8, 2026).',
-      'Won $174M naval nuclear fuel contract (Apr 5); partnered with Liburdi GAPCO for nuclear component installation; raised quarterly dividend; selected as subcontractor for NextGen MURR reactor.',
-      'FY2025: revenue $3.2B (+18% YoY), backlog $7.3B (+50%); FY2026 guidance raised to EPS $4.55–$4.70, revenue ~$3.75B; stock up ~18% YTD, ~127% 1Y.'
+      'TD Securities initiated Buy with $230 PT on Mar 12, calling BWXT\'s model "very attractive" with strong nuclear heritage and multiple growth vectors.',
+      'FY26 guidance: EPS $4.55–$4.70 (vs $4.30 est.) and revenue ~$3.75B (vs $3.67B est.); backlog grew 50% in 2025 to $7.4B.',
+      'Kinectrics (BWXT division) selected as design/fabrication partner for UK Atomic Energy Authority\'s H3AT facility (Mar 16, 2026).'
     ]},
   MIR:{rating:'Buy',pt_consensus:29,pt_low:22,pt_high:34,analyst_count:7,
     cov:[
@@ -408,7 +363,19 @@ const EN = {
       'Range Nuclear Renaissance ETF (NUKZ) — tracks the VettaFi Nuclear Renaissance Index with concentrated exposure to advanced nuclear and SMR developers.',
       'Heavier weighting to pre-revenue SMR developers vs NLR and URA; includes OKLO, NuScale, and other emerging nuclear names.',
       '1-year return +57%. Higher risk/reward profile than NLR due to greater concentration in pre-revenue advanced nuclear companies.'
-    ]}
+    ]},
+  XE:{rating:'Buy',pt_consensus:null,pt_low:null,pt_high:null,analyst_count:0,
+    cov:[
+      {firm:'J.P. Morgan',rating:'Buy',target:null,date:'Apr 2026',url:'https://stockanalysis.com/stocks/xe/forecast/'},
+      {firm:'Morgan Stanley',rating:'Buy',target:null,date:'Apr 2026',url:'https://stockanalysis.com/stocks/xe/forecast/'},
+      {firm:'Jefferies',rating:'Buy',target:null,date:'Apr 2026',url:'https://stockanalysis.com/stocks/xe/forecast/'},
+    ],
+    dcf_bear:12,dcf_base:28,dcf_bull:55,wacc:13,tgr:4,er:'miss',en_note:'IPO Apr 24, 2026 at $23/share · raised $1.02B · first day of trading',es:null,
+    news:[
+      'X-energy priced its upsized IPO at $23/share on Apr 23, 2026 — $4 above the $16–$19 range — raising $1.02B. Stock began trading Apr 24, 2026 on Nasdaq under XE with an expected opening around $28.',
+      'Amazon owns 24.3% post-IPO (down from 29% pre-IPO); ARK Investment Management indicated on $105M of shares (10% of deal). J.P. Morgan, Morgan Stanley, Jefferies, and Moelis led the offering.',
+      'TX-1 TRISO-X fuel fabrication facility in Oak Ridge, TN received NRC Special Nuclear Material license in Feb 2026 — a landmark regulatory milestone. DOE ARDP has reimbursed ~$438M of up to $1.2B committed.'
+    ]},
 };
 
 let live={}, sortKey='ticker', activeTab='overview', activeCat='all';
@@ -416,7 +383,7 @@ let live={}, sortKey='ticker', activeTab='overview', activeCat='all';
 // Category definitions
 const CATS = {
   industrials: { label:'Nuclear Industrials', color:'#4f8ef7', tickers:['BWXT','MIR','GHM'] },
-  smr:         { label:'SMR & Micro-Reactor Developers', color:'#3dd68c', tickers:['OKLO','SMR','NNE','NKLR','IMSR'] },
+  smr:         { label:'SMR & Micro-Reactor Developers', color:'#3dd68c', tickers:['OKLO','SMR','NNE','NKLR','IMSR','XE'] },
   fuel:        { label:'Fuel, Enrichment & Uranium', color:'#f7c94f', tickers:['LEU','CCJ','LTBR','SILXY'] },
   etf:         { label:'ETFs & Funds', color:'#a78bfa', tickers:['URA','NLR','NUKZ'] },
 };
@@ -521,7 +488,7 @@ async function fetchTicker(ticker) {
 /* ── FETCH FINANCIALS (called on-demand when tab opened) ── */
 const finCache = {};
 // Pre-revenue / startup tickers — show cash burn instead of profit multiples
-const STARTUPS = ['OKLO','SMR','NNE','LTBR','NKLR','IMSR','SILXY'];
+const STARTUPS = ['OKLO','SMR','NNE','LTBR','NKLR','IMSR','SILXY','XE'];
 
 async function fetchFinancials(ticker) {
   if (finCache[ticker]) return finCache[ticker];
@@ -805,6 +772,7 @@ async function fetchFinancials(ticker) {
     OKLO: { fwdEpsEst:-0.70, fwdEpsEst2:-0.50,fwdRevEst:1.5e6,  fwdRevEst2:3.3e6,  fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:null  },
     MIR:  { fwdEpsEst:0.535, fwdEpsEst2:0.72, fwdRevEst:1.02e9, fwdRevEst2:1.08e9, fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:null  },
     GHM:  { fwdEpsEst:2.10,  fwdEpsEst2:2.65, fwdRevEst:235e6,  fwdRevEst2:265e6,  fwdPeriod:'2027-03', fwdPeriod2:'2028-03', fwdEbitdaEst:null  },
+    XE:   { fwdEpsEst:-1.20, fwdEpsEst2:-0.90,fwdRevEst:180e6,  fwdRevEst2:350e6,  fwdPeriod:'2026-12', fwdPeriod2:'2027-12', fwdEbitdaEst:null  },
   };
 
   if (KNOWN_ESTIMATES[ticker]) {
@@ -871,10 +839,10 @@ async function loadAll(){
   if(ok===TICKERS.length){
     const hasReturns = TICKERS.some(t=>live[t]?.wk1Pct!=null);
     setStatus('ok', hasReturns
-      ? 'All 15 tickers loaded with full returns · '+new Date().toLocaleDateString()
+      ? 'All 16 tickers loaded with full returns · '+new Date().toLocaleDateString()
       : 'Prices loaded · Historical returns unavailable (check FMP plan includes historical data)');
   }
-  else if(ok>0) setStatus('warn',`${ok}/15 loaded · Failed: ${failed.join(', ')}`);
+  else if(ok>0) setStatus('warn',`${ok}/16 loaded · Failed: ${failed.join(', ')}`);
   else setStatus('err','Failed: '+(live[TICKERS[0]]?.msg||'unknown'));
 }
 
@@ -1294,6 +1262,17 @@ const SEC_FILINGS = {
   URA:  { cik:null, latest10K:'https://www.globalxetfs.com/funds/ura/#documents', latest10Q:'https://www.globalxetfs.com/funds/ura/#documents', latest10Kdate:'Annual report', latest10Qdate:'Semi-annual', allAnnual:'https://www.globalxetfs.com/funds/ura/#documents', allQuarterly:'https://www.globalxetfs.com/funds/ura/#documents', all8K:'https://www.globalxetfs.com/funds/ura/#documents', ir:'https://www.globalxetfs.com/funds/ura/' },
   NLR:  { cik:null, latest10K:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', latest10Q:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', latest10Kdate:'Annual report', latest10Qdate:'Semi-annual', allAnnual:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', allQuarterly:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', all8K:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/', ir:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/' },
   NUKZ: { cik:null, latest10K:'https://www.rangeglobal.com/etfs/nukz', latest10Q:'https://www.rangeglobal.com/etfs/nukz', latest10Kdate:'Annual report', latest10Qdate:'Semi-annual', allAnnual:'https://www.rangeglobal.com/etfs/nukz', allQuarterly:'https://www.rangeglobal.com/etfs/nukz', all8K:'https://www.rangeglobal.com/etfs/nukz', ir:'https://www.rangeglobal.com/etfs/nukz' },
+  XE: {
+    cik:'0002061927',
+    latest10K:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002061927&type=10-K&dateb=&owner=include&count=5',
+    latest10Q:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002061927&type=10-Q&dateb=&owner=include&count=5',
+    latest10Kdate:'Dec 31, 2025', latest10Qdate:'IPO Apr 24, 2026',
+    allAnnual:  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002061927&type=10-K&dateb=&owner=include&count=10',
+    allQuarterly:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002061927&type=10-Q&dateb=&owner=include&count=10',
+    all8K:       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002061927&type=8-K&dateb=&owner=include&count=10',
+    ir:'https://investors.x-energy.com/',
+    note:'IPO Apr 24, 2026 — first day of trading. SEC filings include S-1 registration statement and future 10-K/10-Q filings.'
+  },
 };
 
 // Key insider & institutional ownership data (sourced Mar 2026 — update quarterly)
@@ -1424,6 +1403,21 @@ const OWNERSHIP = {
   URA:  { float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.globalxetfs.com/funds/ura/#documents' },
   NLR:  { float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.vaneck.com/us/en/investments/uranium-nuclear-etf-nlr/literature/' },
   NUKZ: { float:null, insiderPct:null, institutionalPct:null, shortPct:null, sharesOut:'N/A', sharesFloat:'N/A', topInsiders:[], topInstitutions:[], insiderFormUrl:'https://www.rangeglobal.com/etfs/nukz' },
+  XE: {
+    float: 44.0, insiderPct: 56.0, institutionalPct: 29.3, shortPct: null,
+    sharesOut: '~285M', sharesFloat: '~126M',
+    topInsiders:[
+      {name:'Amazon NV Investment Holdings', shares:'~69M', pct:'24.3%', action:'Pre-IPO investor; stake reduced from 29% at IPO pricing'},
+      {name:'Kam Ghaffarian (Founder)', shares:'N/A', pct:'Significant', action:'Founder; primary pre-IPO shareholder'},
+      {name:'J. Clay Sell (CEO)', shares:'N/A', pct:'N/A', action:'No post-IPO transaction data yet'},
+    ],
+    topInstitutions:[
+      {name:'ARK Investment Management', shares:'~4.6M', pct:'~1.6%', action:'Indicated on $105M at IPO (10% of deal)'},
+      {name:'J.P. Morgan (book-runner)', shares:'N/A', pct:'N/A', action:'Lead underwriter'},
+      {name:'Morgan Stanley (book-runner)', shares:'N/A', pct:'N/A', action:'Lead underwriter'},
+    ],
+    insiderFormUrl:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0002061927&type=4&dateb=&owner=include&count=20'
+  },
 };
 const analystCache = {};
 
@@ -1549,32 +1543,27 @@ function rCoverage(t){
 
 const NEWS_SOURCES = {
   OKLO:[
-    {label:'Oklo Regulatory Wins Spark Questions on Timing — Simply Wall St (Apr 8)',url:'https://simplywall.st/stocks/us/utilities/nyse-oklo/oklo/news/oklo-regulatory-wins-spark-questions-on-commercial-timing-an'},
-    {label:'Oklo Insiders Sell $21M as Cramer Turns Bearish — CoinCentral (Apr 7)',url:'https://coincentral.com/oklo-stock-insiders-sell-over-21m-as-cramer-turns-bearish-heres-why/'},
-    {label:'Nuclear Startup Oklo Scored Key Approvals — Motley Fool (Apr 7)',url:'https://www.fool.com/investing/2026/04/07/nuclear-startup-oklo-regulatory-ok-stock-up/'},
-    {label:'2 Stocks With Monster Potential — Motley Fool (Apr 8)',url:'https://www.fool.com/investing/2026/04/08/stocks-monster-potential-hold-chaos-rivn-oklo/'},
+    {label:'DOE Approves Atomic Alchemy Groves Isotopes Test Reactor',url:'https://finance.yahoo.com/sectors/energy/articles/goldman-sachs-lowers-price-target-193308222.html'},
+    {label:'Goldman Sachs cuts OKLO to $65 — Insider Monkey',url:'https://finance.yahoo.com/sectors/energy/articles/goldman-sachs-lowers-price-target-193308222.html'},
+    {label:'Should You Buy Oklo Below $55? — Motley Fool',url:'https://www.fool.com/investing/2026/03/24/should-you-buy-oklo-stock-while-its-below-55/'},
     {label:'OKLO Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/oklo/forecast/'},
   ],
   SMR:[
-    {label:'Where Will NuScale Power Be in 3 Years? — Motley Fool (Apr 9)',url:'https://www.fool.com/investing/2026/04/09/where-will-nuscale-power-stock-be-in-3-years/'},
-    {label:'NuScale Down 80% — Great News for Long-Term Investors (Apr 3)',url:'https://www.fool.com/investing/2026/04/03/smr-is-down-x-and-i-think-thats-the-best-news/'},
-    {label:'SMR Faces String of Investor Lawsuits (Apr 7)',url:'https://www.timothysykes.com/news/nuscale-power-corporation-smr-news-2026_04_07-2/'},
-    {label:'NuScale vs BWX Technologies — Motley Fool (Apr 2)',url:'https://www.fool.com/investing/2026/04/02/nuscale-power-vs-bwx-technologies-which-nuclear-en/'},
-    {label:'SMR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/SMR/'},
+    {label:'NuScale Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/smr/forecast/'},
+    {label:'SMR Price Targets — TickerNerd',url:'https://tickernerd.com/stock/smr-forecast/'},
+    {label:'Fluor Sells 71M SMR Shares — SEC Filing',url:'https://finance.yahoo.com/quote/SMR/'},
   ],
   NNE:[
     {label:'NNE Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/nne/forecast/'},
     {label:'NNE Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/NNE/'},
   ],
   LEU:[
-    {label:'Centrus Energy vs Cameco: Which Has an Edge? — Zacks (Feb 23)',url:'https://www.nasdaq.com/articles/centrus-energy-vs-cameco-which-uranium-stock-has-edge-right-now'},
-    {label:'Better Nuclear Stock: CCJ vs LEU — Motley Fool (Mar 24)',url:'https://www.fool.com/investing/2026/03/24/better-nuclear-energy-stock-cameco-ccj-vs-leu/'},
+    {label:'Cameco vs Centrus: Better Nuclear Stock? — Motley Fool',url:'https://www.fool.com/investing/2026/03/24/better-nuclear-energy-stock-cameco-ccj-vs-leu/'},
     {label:'LEU Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/leu/forecast/'},
     {label:'LEU Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/LEU/'},
   ],
   CCJ:[
-    {label:'Cameco Surges 200% in a Year: Buy, Sell or Hold? — Zacks (Apr 8)',url:'https://www.zacks.com/stock/news/2896561/cameco-surges-200-in-a-year-buy-sell-or-hold-the-stock'},
-    {label:'Cameco Is One of 2026\'s Biggest Winners — Motley Fool (Apr 9)',url:'https://www.fool.com/investing/2026/04/09/ccj-is-one-of-2026s-biggest-winners-heres-t/'},
+    {label:'Cameco vs Centrus: Better Nuclear Stock? — Motley Fool',url:'https://www.fool.com/investing/2026/03/24/better-nuclear-energy-stock-cameco-ccj-vs-leu/'},
     {label:'CCJ Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/ccj/forecast/'},
     {label:'CCJ Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/CCJ/'},
   ],
@@ -1583,14 +1572,14 @@ const NEWS_SOURCES = {
     {label:'LTBR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/LTBR/'},
   ],
   BWXT:[
-    {label:'BWXT New Enrichment Facility Licensing — Simply Wall St (Apr 8)',url:'https://simplywall.st/stocks/us/capital-goods/nyse-bwxt/bwx-technologies/news/bwx-technologies-new-enrichment-move-and-what-it-means-for-v'},
-    {label:'BWXT Up 6.1% After $174M Naval Fuel Contract — Simply Wall St (Apr 5)',url:'https://simplywall.st/stocks/us/capital-goods/nyse-bwxt/bwx-technologies/news/bwx-technologies-bwxt-is-up-61-after-landing-new-us174-milli'},
-    {label:'BWXT NextGen MURR Reactor Subcontract Win (Apr 2)',url:'https://simplywall.st/stocks/us/capital-goods/nyse-bwxt/bwx-technologies/news/a-look-at-bwx-technologies-bwxt-valuation-after-nextgen-murr'},
+    {label:'TD Securities Initiates BWXT Buy $230 — Insider Monkey',url:'https://finance.yahoo.com/sectors/energy/articles/td-securities-initiates-coverage-bwx-193259052.html'},
     {label:'BWXT Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/bwxt/forecast/'},
+    {label:'BWXT Q4 Earnings — SEC 8-K',url:'https://www.sec.gov/Archives/edgar/data/0001486957/000148695726000005/bwxt_123125xerexhibit991.htm'},
   ],
   MIR:[
     {label:'MIR Analyst Forecast — StockAnalysis',url:'https://stockanalysis.com/stocks/mir/forecast/'},
     {label:'MIR Analyst Ratings — TipRanks',url:'https://www.tipranks.com/stocks/mir/forecast'},
+    {label:'Mirion FY2026 Earnings Guidance — Ticker Report',url:'https://www.tickerreport.com/banking-finance/13343171/mirion-technologies-nysemir-releases-fy-2026-earnings-guidance.html'},
     {label:'MIR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/MIR/'},
   ],
   GHM:[
@@ -1600,6 +1589,7 @@ const NEWS_SOURCES = {
   ],
   NKLR:[
     {label:'NKLR Company Overview — StockAnalysis',url:'https://stockanalysis.com/stocks/nklr/'},
+    {label:'Terra Innovatum SPAC Merger — Neutron Bytes',url:'https://neutronbytes.com/2025/10/03/terra-innovatum-its-sets-sights-on-230m-spac/'},
     {label:'NKLR Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/NKLR/'},
   ],
   IMSR:[
@@ -1609,25 +1599,36 @@ const NEWS_SOURCES = {
   SILXY:[
     {label:'Silex Systems ADR — Nasdaq',url:'https://www.nasdaq.com/market-activity/stocks/silxy'},
     {label:'SILXY Quote — CNBC',url:'https://www.cnbc.com/quotes/SILXY'},
+    {label:'Silex Systems Overview — Morningstar',url:'https://www.morningstar.com/stocks/pinx/silxy/quote'},
   ],
   URA:[
     {label:'Global X Uranium ETF — ETF Database',url:'https://etfdb.com/etf/URA/'},
+    {label:'Best Nuclear ETFs 2026 — Motley Fool',url:'https://www.fool.com/investing/stock-market/market-sectors/energy/nuclear/nuclear-etfs/'},
     {label:'URA Quote & Holdings — Yahoo Finance',url:'https://finance.yahoo.com/quote/URA/'},
   ],
   NLR:[
     {label:'VanEck Uranium & Nuclear ETF — ETF Database',url:'https://etfdb.com/etf/NLR/'},
+    {label:'NLR Overview — StockAnalysis',url:'https://stockanalysis.com/etf/nlr/'},
     {label:'NLR Quote & Holdings — Yahoo Finance',url:'https://finance.yahoo.com/quote/NLR/'},
   ],
   NUKZ:[
     {label:'Range Nuclear Renaissance ETF — Yahoo Finance',url:'https://finance.yahoo.com/quote/NUKZ/'},
-    {label:'NUKZ vs URA vs NLR — ETF Trends',url:'https://www.etftrends.com/nuclear-energy-content-hub/'},
+    {label:'NUKZ vs URA vs NLR Comparison — ETF Trends',url:'https://www.etftrends.com/nuclear-energy-content-hub/'},
+  ],
+  XE:[
+    {label:'X-energy IPO Pricing — BusinessWire',url:'https://www.businesswire.com/news/home/20260423988681/en/X-energy-Announces-Pricing-of-Upsized-Initial-Public-Offering'},
+    {label:'X-energy Overview — StockAnalysis',url:'https://stockanalysis.com/stocks/xe/'},
+    {label:'Amazon-backed X-energy Raises $1B in IPO — Seeking Alpha',url:'https://seekingalpha.com/news/4579196-amazon-backed-nuclear-startup-x-energy-raises-102b-in-ipo'},
+    {label:'TX-1 NRC License & DOE ARDP — TradingView',url:'https://www.tradingview.com/news/tradingview:0d99abf888d32:0-x-energy-advanced-nuclear-reactor-and-fuel-developer-files-for-nasdaq-ipo/'},
+    {label:'Fluor EPC Contract — Seadrift TX Project',url:'https://newsroom.fluor.com/news-releases/news-details/2026/Fluor-Signs-Contract-With-X-Energy-for-Advanced-Nuclear-Project-in-Texas/default.aspx'},
+    {label:'XE Quote & News — Yahoo Finance',url:'https://finance.yahoo.com/quote/XE/'},
   ],
 };
 
 function rNews(t){
   const src = NEWS_SOURCES[t]||[];
   return EN[t].news.map(n=>`<div class="ni">${n}</div>`).join('')
-    + (src.length ? `<div class="shd" style="margin-top:10px">Sources · April 10, 2026</div>`
+    + (src.length ? `<div class="shd" style="margin-top:10px">Sources · March 26, 2026</div>`
         + src.map(s=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);">
           <a href="${s.url}" target="_blank" style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">↗ ${s.label}</a>
         </div>`).join('') : '');
@@ -2037,447 +2038,6 @@ function rOwnership(t) {
     </div>`;
 }
 
-/* ── PEER BASKET CHART ────────────────────────────────── */
-let peerRange = 'YTD';
-let peerHidden = {}; // hidden basket keys
-
-function getPeerFromDate(range) {
-  if (range === '1M')  return daysAgo(30);
-  if (range === 'YTD') return ytdStart();
-  if (range === '1Y')  return oneYrAgo();
-  return ytdStart();
-}
-
-function computeBasketIndex(catKey, fromDate) {
-  const cat = CATS[catKey];
-  if (!cat) return [];
-  const tickers = cat.tickers;
-
-  // Collect all dates that have price data for at least some tickers
-  const tickerData = {};
-  let allDates = new Set();
-  tickers.forEach(t => {
-    const lv = live[t];
-    if (!lv || lv.error || !lv.priceMap) return;
-    tickerData[t] = lv.priceMap;
-    Object.keys(lv.priceMap).forEach(d => { if (d >= fromDate) allDates.add(d); });
-  });
-
-  const validTickers = Object.keys(tickerData);
-  if (validTickers.length === 0) return [];
-
-  const dates = [...allDates].sort();
-  if (dates.length < 2) return [];
-
-  // Get EV weights: use live mktCap + debt - cash from finCache, or just mktCap
-  const weights = {};
-  let totalWeight = 0;
-  validTickers.forEach(t => {
-    const lv2 = live[t];
-    let ev = 0;
-    if (lv2.mktCap) {
-      const raw = lv2.mktCap;
-      const num = parseFloat(raw);
-      const mult = raw.includes('T') ? 1e12 : raw.includes('B') ? 1e9 : raw.includes('M') ? 1e6 : 1;
-      ev = num * mult;
-      // Add debt - cash if available
-      const fin = finCache[t];
-      if (fin) {
-        ev += (fin.totalDebt || 0) - (fin.cash || 0);
-      }
-    }
-    if (ev <= 0) ev = 1e8; // fallback
-    weights[t] = ev;
-    totalWeight += ev;
-  });
-
-  // Normalize weights
-  validTickers.forEach(t => { weights[t] /= totalWeight; });
-
-  // Find base prices (first available date for each ticker)
-  const basePrices = {};
-  validTickers.forEach(t => {
-    const map = tickerData[t];
-    // Find closest date on or after fromDate
-    for (const d of dates) {
-      if (map[d] != null) { basePrices[t] = map[d]; break; }
-    }
-  });
-
-  // Compute weighted indexed value for each date
-  const result = [];
-  dates.forEach(d => {
-    let indexVal = 0;
-    let weightUsed = 0;
-    validTickers.forEach(t => {
-      const map = tickerData[t];
-      const base = basePrices[t];
-      if (!base) return;
-      // Find closest price on or before d
-      let price = null;
-      const sortedDates = Object.keys(map).sort();
-      for (let i = sortedDates.length - 1; i >= 0; i--) {
-        if (sortedDates[i] <= d) { price = map[sortedDates[i]]; break; }
-      }
-      if (price != null) {
-        indexVal += (price / base) * 100 * weights[t];
-        weightUsed += weights[t];
-      }
-    });
-    if (weightUsed > 0) {
-      result.push({ d, v: indexVal / weightUsed });
-    }
-  });
-
-  // Add today's live prices
-  const today = toYMD(new Date());
-  let todayIdx = 0, todayW = 0;
-  validTickers.forEach(t => {
-    const lv2 = live[t];
-    const base = basePrices[t];
-    if (!base || !lv2 || !lv2.price) return;
-    todayIdx += (lv2.price / base) * 100 * weights[t];
-    todayW += weights[t];
-  });
-  if (todayW > 0) {
-    result.push({ d: today, v: todayIdx / todayW });
-  }
-
-  return result;
-}
-
-function getBasketReturn(catKey, fromDate) {
-  const pts = computeBasketIndex(catKey, fromDate);
-  if (pts.length < 2) return null;
-  return pts[pts.length - 1].v - 100;
-}
-
-function drawPeerChart() {
-  const ranges = ['1M', 'YTD', '1Y'];
-  const baskets = Object.keys(CATS);
-  const colors = { industrials: '#4f8ef7', smr: '#3dd68c', fuel: '#f7c94f', etf: '#a78bfa' };
-
-  ranges.forEach(range => {
-    const fromDate = getPeerFromDate(range);
-    const basketData = {};
-    let allVals = [];
-
-    baskets.forEach(key => {
-      if (peerHidden[key]) return;
-      const pts = computeBasketIndex(key, fromDate);
-      basketData[key] = pts;
-      pts.forEach(p => allVals.push(p.v));
-    });
-
-    const container = document.getElementById(`peerChart_${range}`);
-    if (!container) return;
-
-    if (allVals.length === 0) {
-      container.innerHTML = '<div style="height:180px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">Loading…</div>';
-      return;
-    }
-
-    const W = 320, H = 200, PAD = 42, PADR = 52, PADT = 12, PADB = 24;
-    const minV = Math.min(...allVals, 100) - 2;
-    const maxV = Math.max(...allVals, 100) + 2;
-    const rangeV = maxV - minV || 1;
-
-    let allDates = new Set();
-    baskets.forEach(key => {
-      if (basketData[key]) basketData[key].forEach(p => allDates.add(p.d));
-    });
-    const dates = [...allDates].sort();
-    if (dates.length < 2) { container.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">Insufficient data</div>'; return; }
-
-    const xFn = (d) => PAD + ((dates.indexOf(d)) / (dates.length - 1)) * (W - PAD - PADR);
-    const yFn = (v) => PADT + ((maxV - v) / rangeV) * (H - PADT - PADB);
-
-    // Grid lines — aim for 5-7 ticks regardless of range
-    const gridLines = [];
-    const yTicks = [];
-    const rawStep = rangeV / 6;
-    const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-    const nice = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500];
-    const step = nice.find(n => n * mag >= rawStep) * mag || rawStep;
-    for (let v = Math.ceil(minV / step) * step; v <= maxV; v += step) {
-      const y = yFn(v);
-      gridLines.push(`<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PADR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5"/>`);
-      yTicks.push(`<text x="${PAD - 5}" y="${(y + 3).toFixed(1)}" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="end">${v.toFixed(0)}</text>`);
-    }
-    // 100 baseline
-    const y100 = yFn(100);
-    gridLines.push(`<line x1="${PAD}" y1="${y100.toFixed(1)}" x2="${W - PADR}" y2="${y100.toFixed(1)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>`);
-
-    // Date labels
-    const dateLabels = [];
-    const labelCount = Math.min(4, dates.length);
-    for (let i = 0; i < labelCount; i++) {
-      const idx = Math.round(i * (dates.length - 1) / (labelCount - 1));
-      const d = dates[idx];
-      const x = xFn(d);
-      const label = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      dateLabels.push(`<text x="${x.toFixed(1)}" y="${H - 4}" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle">${label}</text>`);
-    }
-
-    // Lines
-    const lines = [];
-    const rawEndLabels = [];
-    baskets.forEach(key => {
-      if (peerHidden[key] || !basketData[key] || basketData[key].length < 2) return;
-      const pts = basketData[key];
-      const color = colors[key];
-      const pathD = pts.map((p, i) => {
-        const x = xFn(p.d);
-        const y = yFn(p.v);
-        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-      }).join(' ');
-      lines.push(`<path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`);
-
-      const last = pts[pts.length - 1];
-      const lx = xFn(last.d);
-      const ly = yFn(last.v);
-      const ret = (last.v - 100).toFixed(1);
-      const sign = last.v >= 100 ? '+' : '';
-      lines.push(`<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="${color}"/>`);
-      rawEndLabels.push({ x: lx, y: ly, color, text: `${sign}${ret}%` });
-    });
-
-    // De-overlap end labels (push apart if within 10px vertically)
-    rawEndLabels.sort((a, b) => a.y - b.y);
-    for (let i = 1; i < rawEndLabels.length; i++) {
-      const gap = rawEndLabels[i].y - rawEndLabels[i - 1].y;
-      if (gap < 11) {
-        const shift = (11 - gap) / 2;
-        rawEndLabels[i - 1].y -= shift;
-        rawEndLabels[i].y += shift;
-      }
-    }
-    const endLabels = rawEndLabels.map(l =>
-      `<text x="${(l.x + 6).toFixed(1)}" y="${(l.y + 3).toFixed(1)}" fill="${l.color}" font-size="9" font-family="var(--font-mono)" font-weight="600">${l.text}</text>`
-    );
-
-    // Crosshair
-    const crossId = `peerCross_${range}`;
-    const ttId = `peerTT_${range}`;
-
-    container.innerHTML = `<div style="position:relative;cursor:crosshair;" id="peerWrap_${range}"
-      onmousemove="peerMiniHover(event,'${range}')" onmouseleave="peerMiniLeave('${range}')">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-        ${gridLines.join('')}
-        ${yTicks.join('')}
-        ${dateLabels.join('')}
-        ${lines.join('')}
-        ${endLabels.join('')}
-        <line id="${crossId}" x1="0" y1="${PADT}" x2="0" y2="${H - PADB}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
-      </svg>
-      <div class="peer-tooltip" id="${ttId}">
-        <div class="peer-tooltip-box" id="${ttId}_box"></div>
-      </div>
-    </div>`;
-
-    // Store meta for hover
-    window[`_peerMini_${range}`] = { dates, W, H, PAD, PADR, PADT, PADB, baskets: baskets.filter(k => !peerHidden[k]), basketData, colors, minV, maxV, rangeV };
-  });
-
-  // Shared legend with ticker listings
-  const legend = baskets.map(key => {
-    const cat = CATS[key];
-    const hidden = peerHidden[key];
-    const tickers = cat.tickers.join(', ');
-    return `<div class="peer-legend-item" onclick="togglePeerBasket('${key}')" style="opacity:${hidden ? 0.3 : 1};flex-direction:column;align-items:flex-start;gap:1px">
-      <div style="display:flex;align-items:center;gap:5px">
-        <div class="peer-legend-dot" style="background:${colors[key]}"></div>
-        <span style="color:${hidden ? 'var(--muted)' : 'var(--text)'}">${cat.label}</span>
-      </div>
-      <span style="font-size:9px;color:var(--muted);margin-left:15px">${tickers}</span>
-    </div>`;
-  }).join('');
-  document.getElementById('peerLegendArea').innerHTML = `<div class="peer-legend">${legend}</div>`;
-
-  // Performance table
-  const tRanges = [
-    { label: '1M', from: daysAgo(30) },
-    { label: 'YTD', from: ytdStart() },
-    { label: '1Y', from: oneYrAgo() },
-  ];
-  let perfRows = baskets.map(key => {
-    const cat = CATS[key];
-    const cells = tRanges.map(r => {
-      const ret = getBasketReturn(key, r.from);
-      if (ret == null) return '<td><span class="na">N/A</span></td>';
-      const c = ret >= 0 ? 'pos' : 'neg';
-      const s = ret >= 0 ? '+' : '';
-      return `<td><span class="${c}">${s}${ret.toFixed(1)}%</span></td>`;
-    }).join('');
-    return `<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colors[key]};margin-right:6px;vertical-align:middle"></span>${cat.label}</td>${cells}</tr>`;
-  }).join('');
-
-  document.getElementById('peerTableArea').innerHTML = `<table class="peer-perf-tbl">
-    <thead><tr><th>Basket (EV-weighted)</th><th>1M</th><th>YTD</th><th>1Y</th></tr></thead>
-    <tbody>${perfRows}</tbody>
-  </table>`;
-}
-
-function peerMiniHover(e, range) {
-  const meta = window[`_peerMini_${range}`];
-  if (!meta) return;
-  const { dates, W, H, PAD, PADR, PADT, PADB, baskets, basketData, colors } = meta;
-  const wrap = document.getElementById(`peerWrap_${range}`);
-  const rect = wrap.getBoundingClientRect();
-  const mouseX = ((e.clientX - rect.left) / rect.width) * W;
-  const clampedX = Math.max(PAD, Math.min(W - PADR, mouseX));
-  const idx = Math.round(((clampedX - PAD) / (W - PAD - PADR)) * (dates.length - 1));
-  const safeIdx = Math.max(0, Math.min(dates.length - 1, idx));
-  const d = dates[safeIdx];
-
-  const cross = document.getElementById(`peerCross_${range}`);
-  if (cross) {
-    const x = PAD + (safeIdx / (dates.length - 1)) * (W - PAD - PADR);
-    cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('opacity', '0.6');
-  }
-
-  const dateStr = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  let rows = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-bottom:3px">${dateStr}</div>`;
-  baskets.forEach(key => {
-    const pts = basketData[key];
-    if (!pts) return;
-    let val = null;
-    for (let i = pts.length - 1; i >= 0; i--) {
-      if (pts[i].d <= d) { val = pts[i].v; break; }
-    }
-    if (val == null && pts.length > 0) val = pts[0].v;
-    if (val != null) {
-      const ret = (val - 100).toFixed(1);
-      const sign = parseFloat(ret) >= 0 ? '+' : '';
-      const c = parseFloat(ret) >= 0 ? 'var(--green)' : 'var(--red)';
-      rows += `<div style="display:flex;justify-content:space-between;gap:10px;padding:1px 0;font-family:var(--font-mono);font-size:9px">
-        <span style="color:${colors[key]}">${CATS[key].label.split(' ')[0]}</span>
-        <span style="color:${c};font-weight:500">${sign}${ret}%</span>
-      </div>`;
-    }
-  });
-
-  const tt = document.getElementById(`peerTT_${range}`);
-  const ttBox = document.getElementById(`peerTT_${range}_box`);
-  if (tt && ttBox) {
-    ttBox.innerHTML = rows;
-    tt.style.display = 'block';
-    const pxX = (clampedX / W) * rect.width;
-    const ttW = 150;
-    tt.style.left = (pxX + ttW + 10 > rect.width ? pxX - ttW - 4 : pxX + 8) + 'px';
-    tt.style.top = '10px';
-  }
-}
-
-function peerMiniLeave(range) {
-  const tt = document.getElementById(`peerTT_${range}`);
-  if (tt) tt.style.display = 'none';
-  const cross = document.getElementById(`peerCross_${range}`);
-  if (cross) cross.setAttribute('opacity', '0');
-}
-
-function togglePeerBasket(key) {
-  peerHidden[key] = !peerHidden[key];
-  drawPeerChart();
-}
-
-function rPeers(t) {
-  const lv = live[t] || {};
-  const catKey = TICKER_CAT[t];
-  const cat = CATS[catKey];
-  if (!lv || lv.error) return '';
-
-  // Individual ticker indexed returns
-  const ranges = [
-    { label: '1M', from: daysAgo(30) },
-    { label: 'YTD', from: ytdStart() },
-    { label: '1Y', from: oneYrAgo() },
-  ];
-
-  // Get EV for this ticker
-  let ev = null;
-  if (lv.mktCap) {
-    const raw = lv.mktCap, num = parseFloat(raw);
-    const mult = raw.includes('T') ? 1e12 : raw.includes('B') ? 1e9 : raw.includes('M') ? 1e6 : 1;
-    ev = num * mult;
-    const fin = finCache[t];
-    if (fin) ev += (fin.totalDebt || 0) - (fin.cash || 0);
-  }
-
-  // Compute EV weight within its basket
-  let evWeight = null;
-  if (ev && cat) {
-    let totalEV = 0;
-    cat.tickers.forEach(ct => {
-      const clv = live[ct];
-      if (!clv || clv.error || !clv.mktCap) return;
-      const raw = clv.mktCap, num = parseFloat(raw);
-      const mult = raw.includes('T') ? 1e12 : raw.includes('B') ? 1e9 : raw.includes('M') ? 1e6 : 1;
-      let cev = num * mult;
-      const cf = finCache[ct];
-      if (cf) cev += (cf.totalDebt || 0) - (cf.cash || 0);
-      totalEV += cev;
-    });
-    if (totalEV > 0) evWeight = ev / totalEV;
-  }
-
-  const retCells = ranges.map(r => {
-    let ret = null;
-    if (lv.priceMap && lv.price) {
-      const priceDates = Object.keys(lv.priceMap).sort();
-      let basePrice = null;
-      for (const d of priceDates) {
-        if (d >= r.from) { basePrice = lv.priceMap[d]; break; }
-      }
-      if (basePrice) ret = ((lv.price - basePrice) / basePrice) * 100;
-    }
-    if (ret == null) {
-      if (r.label === '1M') ret = lv.mo1Pct;
-      else if (r.label === 'YTD') ret = lv.ytdPct;
-      else if (r.label === '1Y') ret = lv.yr1Pct;
-    }
-    return ret;
-  });
-
-  // Basket returns for the same periods
-  const basketRets = ranges.map(r => getBasketReturn(catKey, r.from));
-
-  // Relative performance (ticker vs basket)
-  const relPerf = retCells.map((ret, i) => {
-    if (ret == null || basketRets[i] == null) return null;
-    return ret - basketRets[i];
-  });
-
-  const colors = { industrials: '#4f8ef7', smr: '#3dd68c', fuel: '#f7c94f', etf: '#a78bfa' };
-
-  return `
-    <div class="shd">Peer basket · <span style="color:${colors[catKey]}">${cat.label}</span></div>
-    <div class="kg">
-      ${kv('EV', ev ? fmtCap(ev) : '<span class="na">N/A</span>')}
-      ${kv('Basket weight', evWeight != null ? (evWeight * 100).toFixed(1) + '%' : '<span class="na">N/A</span>')}
-    </div>
-    <table class="ptbl" style="margin-top:8px">
-      <thead><tr><th></th><th>1M</th><th>YTD</th><th>1Y</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>${t}</td>
-          ${retCells.map(r => `<td>${r != null ? ps(r) : '<span class="na">N/A</span>'}</td>`).join('')}
-        </tr>
-        <tr>
-          <td style="color:${colors[catKey]}">${cat.label.split(' ')[0]} basket</td>
-          ${basketRets.map(r => `<td>${r != null ? ps(r) : '<span class="na">N/A</span>'}</td>`).join('')}
-        </tr>
-        <tr>
-          <td>Relative</td>
-          ${relPerf.map(r => `<td>${r != null ? ps(r) : '<span class="na">N/A</span>'}</td>`).join('')}
-        </tr>
-      </tbody>
-    </table>
-    <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:8px">
-      Basket peers: ${cat.tickers.join(', ')} · EV-weighted indexed returns
-    </div>`;
-}
-
 function renderCard(t){
   const lv=live[t],en=EN[t];
   let ph,ch;
@@ -2494,7 +2054,7 @@ function renderCard(t){
   }
   const body=!lv
     ?`<div style="display:flex;flex-direction:column;gap:6px">${[95,80,90,70,85].map(w=>`<div class="sk" style="height:10px;width:${w}%"></div>`).join('')}</div>`
-    :activeTab==='overview'?rOverview(t):activeTab==='valuation'?rValuation(t):activeTab==='financials'?rFinancials(t):activeTab==='coverage'?rCoverage(t):activeTab==='filings'?rFilings(t):activeTab==='ownership'?rOwnership(t):activeTab==='peers'?rPeers(t):rNews(t);
+    :activeTab==='overview'?rOverview(t):activeTab==='valuation'?rValuation(t):activeTab==='financials'?rFinancials(t):activeTab==='coverage'?rCoverage(t):activeTab==='filings'?rFilings(t):activeTab==='ownership'?rOwnership(t):rNews(t);
   return`<div class="card"><div class="ch"><div><div class="tkr">${t}</div><div class="cn">${NAMES[t]}</div></div><div class="pb">${ph}${ch}</div></div>${body}</div>`;
 }
 
@@ -2566,14 +2126,6 @@ function setTab(tab,el){
   activeTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  // Show/hide peer panel
-  const pp = document.getElementById('peerPanel');
-  if (tab === 'peers') {
-    pp.classList.add('show');
-    drawPeerChart();
-  } else {
-    pp.classList.remove('show');
-  }
   if (tab==='financials') {
     TICKERS.forEach(t => {
       if (live[t] && !live[t].error && !finCache[t]) {

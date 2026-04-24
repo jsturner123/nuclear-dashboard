@@ -126,6 +126,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 .chart-tooltip-price{font-family:var(--font-mono);font-size:12px;font-weight:600;}
 .chart-meta{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:3px;}
 
+/* ── PEER BASKET CHART ── */
+.peer-panel{padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface);display:none;}
+.peer-panel.show{display:block;}
+.peer-chart-wrap{position:relative;width:100%;height:280px;cursor:crosshair;margin:10px 0;}
+.peer-chart-svg{width:100%;height:100%;display:block;}
+.peer-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-family:var(--font-mono);font-size:10px;}
+.peer-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;transition:opacity .15s;}
+.peer-legend-item:hover{opacity:.8;}
+.peer-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.peer-range-btns{display:flex;gap:4px;margin-bottom:8px;}
+.peer-range-btn{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:2px;cursor:pointer;transition:all .1s;}
+.peer-range-btn:hover{color:var(--text);border-color:var(--border2);}
+.peer-range-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(79,142,247,.08);}
+.peer-tooltip{position:absolute;top:0;left:0;pointer-events:none;display:none;z-index:10;}
+.peer-tooltip-box{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:6px 10px;white-space:nowrap;min-width:140px;}
+.peer-perf-tbl{width:100%;border-collapse:collapse;margin-top:12px;}
+.peer-perf-tbl th{font-family:var(--font-mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:4px 8px 6px;text-align:right;border-bottom:1px solid var(--border);}
+.peer-perf-tbl th:first-child{text-align:left;}
+.peer-perf-tbl td{font-family:var(--font-mono);font-size:11px;padding:5px 8px;text-align:right;border-top:1px solid var(--border);}
+.peer-perf-tbl td:first-child{text-align:left;color:var(--muted);font-size:10px;}
+
 </style>
 </head>
 <body>
@@ -164,6 +185,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
     <button class="tab" onclick="setTab('filings',this)">SEC Filings</button>
     <button class="tab" onclick="setTab('ownership',this)">Ownership</button>
     <button class="tab" onclick="setTab('news',this)">News</button>
+    <button class="tab" onclick="setTab('peers',this)">Peer Baskets</button>
   </div>
   <div class="sorts">
     <span class="slbl">SORT:</span>
@@ -178,6 +200,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 </div>
 
 <div class="prog"><div class="pf" id="pf"></div></div>
+<div class="peer-panel" id="peerPanel">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:13px;font-weight:600">EV-Weighted Indexed Performance</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">Basket returns indexed to 100 at period start · weighted by enterprise value</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;" id="peerTriChart">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">1M</div>
+      <div id="peerChart_1M" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
+    </div>
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">YTD</div>
+      <div id="peerChart_YTD" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
+    </div>
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text)">1Y</div>
+      <div id="peerChart_1Y" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;"></div>
+    </div>
+  </div>
+  <div id="peerLegendArea" style="margin-top:10px"></div>
+  <div id="peerTableArea" style="margin-top:6px"></div>
+</div>
 <div class="grid" id="grid"></div>
 
 <script>
@@ -2041,6 +2087,448 @@ function rOwnership(t) {
     </div>`;
 }
 
+
+/* ── PEER BASKET CHART ────────────────────────────────── */
+let peerRange = 'YTD';
+let peerHidden = {}; // hidden basket keys
+
+function getPeerFromDate(range) {
+  if (range === '1M')  return daysAgo(30);
+  if (range === 'YTD') return ytdStart();
+  if (range === '1Y')  return oneYrAgo();
+  return ytdStart();
+}
+
+function computeBasketIndex(catKey, fromDate) {
+  const cat = CATS[catKey];
+  if (!cat) return [];
+  const tickers = cat.tickers;
+
+  // Collect all dates that have price data for at least some tickers
+  const tickerData = {};
+  let allDates = new Set();
+  tickers.forEach(t => {
+    const lv = live[t];
+    if (!lv || lv.error || !lv.priceMap) return;
+    tickerData[t] = lv.priceMap;
+    Object.keys(lv.priceMap).forEach(d => { if (d >= fromDate) allDates.add(d); });
+  });
+
+  const validTickers = Object.keys(tickerData);
+  if (validTickers.length === 0) return [];
+
+  const dates = [...allDates].sort();
+  if (dates.length < 2) return [];
+
+  // Get EV weights: use live mktCap + debt - cash from finCache, or just mktCap
+  const weights = {};
+  let totalWeight = 0;
+  validTickers.forEach(t => {
+    const lv2 = live[t];
+    let ev = 0;
+    if (lv2.mktCap) {
+      const raw = lv2.mktCap;
+      const num = parseFloat(raw);
+      const mult = raw.includes('T') ? 1e12 : raw.includes('B') ? 1e9 : raw.includes('M') ? 1e6 : 1;
+      ev = num * mult;
+      // Add debt - cash if available
+      const fin = finCache[t];
+      if (fin) {
+        ev += (fin.totalDebt || 0) - (fin.cash || 0);
+      }
+    }
+    if (ev <= 0) ev = 1e8; // fallback
+    weights[t] = ev;
+    totalWeight += ev;
+  });
+
+  // Normalize weights
+  validTickers.forEach(t => { weights[t] /= totalWeight; });
+
+  // Find base prices (first available date for each ticker)
+  const basePrices = {};
+  validTickers.forEach(t => {
+    const map = tickerData[t];
+    // Find closest date on or after fromDate
+    for (const d of dates) {
+      if (map[d] != null) { basePrices[t] = map[d]; break; }
+    }
+  });
+
+  // Compute weighted indexed value for each date
+  const result = [];
+  dates.forEach(d => {
+    let indexVal = 0;
+    let weightUsed = 0;
+    validTickers.forEach(t => {
+      const map = tickerData[t];
+      const base = basePrices[t];
+      if (!base) return;
+      // Find closest price on or before d
+      let price = null;
+      const sortedDates = Object.keys(map).sort();
+      for (let i = sortedDates.length - 1; i >= 0; i--) {
+        if (sortedDates[i] <= d) { price = map[sortedDates[i]]; break; }
+      }
+      if (price != null) {
+        indexVal += (price / base) * 100 * weights[t];
+        weightUsed += weights[t];
+      }
+    });
+    if (weightUsed > 0) {
+      result.push({ d, v: indexVal / weightUsed });
+    }
+  });
+
+  // Add today's live prices
+  const today = toYMD(new Date());
+  let todayIdx = 0, todayW = 0;
+  validTickers.forEach(t => {
+    const lv2 = live[t];
+    const base = basePrices[t];
+    if (!base || !lv2 || !lv2.price) return;
+    todayIdx += (lv2.price / base) * 100 * weights[t];
+    todayW += weights[t];
+  });
+  if (todayW > 0) {
+    result.push({ d: today, v: todayIdx / todayW });
+  }
+
+  return result;
+}
+
+function getBasketReturn(catKey, fromDate) {
+  const pts = computeBasketIndex(catKey, fromDate);
+  if (pts.length < 2) return null;
+  return pts[pts.length - 1].v - 100;
+}
+
+function drawPeerChart() {
+  const ranges = ['1M', 'YTD', '1Y'];
+  const baskets = Object.keys(CATS);
+  const colors = { industrials: '#4f8ef7', smr: '#3dd68c', fuel: '#f7c94f', etf: '#a78bfa' };
+
+  ranges.forEach(range => {
+    const fromDate = getPeerFromDate(range);
+    const basketData = {};
+    let allVals = [];
+
+    baskets.forEach(key => {
+      if (peerHidden[key]) return;
+      const pts = computeBasketIndex(key, fromDate);
+      basketData[key] = pts;
+      pts.forEach(p => allVals.push(p.v));
+    });
+
+    const container = document.getElementById(`peerChart_${range}`);
+    if (!container) return;
+
+    if (allVals.length === 0) {
+      container.innerHTML = '<div style="height:180px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">Loading…</div>';
+      return;
+    }
+
+    const W = 320, H = 200, PAD = 42, PADR = 52, PADT = 12, PADB = 24;
+    const minV = Math.min(...allVals, 100) - 2;
+    const maxV = Math.max(...allVals, 100) + 2;
+    const rangeV = maxV - minV || 1;
+
+    let allDates = new Set();
+    baskets.forEach(key => {
+      if (basketData[key]) basketData[key].forEach(p => allDates.add(p.d));
+    });
+    const dates = [...allDates].sort();
+    if (dates.length < 2) { container.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--muted)">Insufficient data</div>'; return; }
+
+    const xFn = (d) => PAD + ((dates.indexOf(d)) / (dates.length - 1)) * (W - PAD - PADR);
+    const yFn = (v) => PADT + ((maxV - v) / rangeV) * (H - PADT - PADB);
+
+    // Grid lines — aim for 5-7 ticks regardless of range
+    const gridLines = [];
+    const yTicks = [];
+    const rawStep = rangeV / 6;
+    const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const nice = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500];
+    const step = nice.find(n => n * mag >= rawStep) * mag || rawStep;
+    for (let v = Math.ceil(minV / step) * step; v <= maxV; v += step) {
+      const y = yFn(v);
+      gridLines.push(`<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PADR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5"/>`);
+      yTicks.push(`<text x="${PAD - 5}" y="${(y + 3).toFixed(1)}" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="end">${v.toFixed(0)}</text>`);
+    }
+    // 100 baseline
+    const y100 = yFn(100);
+    gridLines.push(`<line x1="${PAD}" y1="${y100.toFixed(1)}" x2="${W - PADR}" y2="${y100.toFixed(1)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>`);
+
+    // Date labels
+    const dateLabels = [];
+    const labelCount = Math.min(4, dates.length);
+    for (let i = 0; i < labelCount; i++) {
+      const idx = Math.round(i * (dates.length - 1) / (labelCount - 1));
+      const d = dates[idx];
+      const x = xFn(d);
+      const label = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dateLabels.push(`<text x="${x.toFixed(1)}" y="${H - 4}" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle">${label}</text>`);
+    }
+
+    // Lines
+    const lines = [];
+    const rawEndLabels = [];
+    baskets.forEach(key => {
+      if (peerHidden[key] || !basketData[key] || basketData[key].length < 2) return;
+      const pts = basketData[key];
+      const color = colors[key];
+      const pathD = pts.map((p, i) => {
+        const x = xFn(p.d);
+        const y = yFn(p.v);
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      lines.push(`<path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`);
+
+      const last = pts[pts.length - 1];
+      const lx = xFn(last.d);
+      const ly = yFn(last.v);
+      const ret = (last.v - 100).toFixed(1);
+      const sign = last.v >= 100 ? '+' : '';
+      lines.push(`<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="${color}"/>`);
+      rawEndLabels.push({ x: lx, y: ly, color, text: `${sign}${ret}%` });
+    });
+
+    // De-overlap end labels (push apart if within 10px vertically)
+    rawEndLabels.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < rawEndLabels.length; i++) {
+      const gap = rawEndLabels[i].y - rawEndLabels[i - 1].y;
+      if (gap < 11) {
+        const shift = (11 - gap) / 2;
+        rawEndLabels[i - 1].y -= shift;
+        rawEndLabels[i].y += shift;
+      }
+    }
+    const endLabels = rawEndLabels.map(l =>
+      `<text x="${(l.x + 6).toFixed(1)}" y="${(l.y + 3).toFixed(1)}" fill="${l.color}" font-size="9" font-family="var(--font-mono)" font-weight="600">${l.text}</text>`
+    );
+
+    // Crosshair
+    const crossId = `peerCross_${range}`;
+    const ttId = `peerTT_${range}`;
+
+    container.innerHTML = `<div style="position:relative;cursor:crosshair;" id="peerWrap_${range}"
+      onmousemove="peerMiniHover(event,'${range}')" onmouseleave="peerMiniLeave('${range}')">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        ${gridLines.join('')}
+        ${yTicks.join('')}
+        ${dateLabels.join('')}
+        ${lines.join('')}
+        ${endLabels.join('')}
+        <line id="${crossId}" x1="0" y1="${PADT}" x2="0" y2="${H - PADB}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
+      </svg>
+      <div class="peer-tooltip" id="${ttId}">
+        <div class="peer-tooltip-box" id="${ttId}_box"></div>
+      </div>
+    </div>`;
+
+    // Store meta for hover
+    window[`_peerMini_${range}`] = { dates, W, H, PAD, PADR, PADT, PADB, baskets: baskets.filter(k => !peerHidden[k]), basketData, colors, minV, maxV, rangeV };
+  });
+
+  // Shared legend with ticker listings
+  const legend = baskets.map(key => {
+    const cat = CATS[key];
+    const hidden = peerHidden[key];
+    const tickers = cat.tickers.join(', ');
+    return `<div class="peer-legend-item" onclick="togglePeerBasket('${key}')" style="opacity:${hidden ? 0.3 : 1};flex-direction:column;align-items:flex-start;gap:1px">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="peer-legend-dot" style="background:${colors[key]}"></div>
+        <span style="color:${hidden ? 'var(--muted)' : 'var(--text)'}">${cat.label}</span>
+      </div>
+      <span style="font-size:9px;color:var(--muted);margin-left:15px">${tickers}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('peerLegendArea').innerHTML = `<div class="peer-legend">${legend}</div>`;
+
+  // Performance table
+  const tRanges = [
+    { label: '1M', from: daysAgo(30) },
+    { label: 'YTD', from: ytdStart() },
+    { label: '1Y', from: oneYrAgo() },
+  ];
+  let perfRows = baskets.map(key => {
+    const cat = CATS[key];
+    const cells = tRanges.map(r => {
+      const ret = getBasketReturn(key, r.from);
+      if (ret == null) return '<td><span class="na">N/A</span></td>';
+      const c = ret >= 0 ? 'pos' : 'neg';
+      const s = ret >= 0 ? '+' : '';
+      return `<td><span class="${c}">${s}${ret.toFixed(1)}%</span></td>`;
+    }).join('');
+    return `<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colors[key]};margin-right:6px;vertical-align:middle"></span>${cat.label}</td>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('peerTableArea').innerHTML = `<table class="peer-perf-tbl">
+    <thead><tr><th>Basket (EV-weighted)</th><th>1M</th><th>YTD</th><th>1Y</th></tr></thead>
+    <tbody>${perfRows}</tbody>
+  </table>`;
+}
+
+function peerMiniHover(e, range) {
+  const meta = window[`_peerMini_${range}`];
+  if (!meta) return;
+  const { dates, W, H, PAD, PADR, PADT, PADB, baskets, basketData, colors } = meta;
+  const wrap = document.getElementById(`peerWrap_${range}`);
+  const rect = wrap.getBoundingClientRect();
+  const mouseX = ((e.clientX - rect.left) / rect.width) * W;
+  const clampedX = Math.max(PAD, Math.min(W - PADR, mouseX));
+  const idx = Math.round(((clampedX - PAD) / (W - PAD - PADR)) * (dates.length - 1));
+  const safeIdx = Math.max(0, Math.min(dates.length - 1, idx));
+  const d = dates[safeIdx];
+
+  const cross = document.getElementById(`peerCross_${range}`);
+  if (cross) {
+    const x = PAD + (safeIdx / (dates.length - 1)) * (W - PAD - PADR);
+    cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('opacity', '0.6');
+  }
+
+  const dateStr = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  let rows = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-bottom:3px">${dateStr}</div>`;
+  baskets.forEach(key => {
+    const pts = basketData[key];
+    if (!pts) return;
+    let val = null;
+    for (let i = pts.length - 1; i >= 0; i--) {
+      if (pts[i].d <= d) { val = pts[i].v; break; }
+    }
+    if (val == null && pts.length > 0) val = pts[0].v;
+    if (val != null) {
+      const ret = (val - 100).toFixed(1);
+      const sign = parseFloat(ret) >= 0 ? '+' : '';
+      const c = parseFloat(ret) >= 0 ? 'var(--green)' : 'var(--red)';
+      rows += `<div style="display:flex;justify-content:space-between;gap:10px;padding:1px 0;font-family:var(--font-mono);font-size:9px">
+        <span style="color:${colors[key]}">${CATS[key].label.split(' ')[0]}</span>
+        <span style="color:${c};font-weight:500">${sign}${ret}%</span>
+      </div>`;
+    }
+  });
+
+  const tt = document.getElementById(`peerTT_${range}`);
+  const ttBox = document.getElementById(`peerTT_${range}_box`);
+  if (tt && ttBox) {
+    ttBox.innerHTML = rows;
+    tt.style.display = 'block';
+    const pxX = (clampedX / W) * rect.width;
+    const ttW = 150;
+    tt.style.left = (pxX + ttW + 10 > rect.width ? pxX - ttW - 4 : pxX + 8) + 'px';
+    tt.style.top = '10px';
+  }
+}
+
+function peerMiniLeave(range) {
+  const tt = document.getElementById(`peerTT_${range}`);
+  if (tt) tt.style.display = 'none';
+  const cross = document.getElementById(`peerCross_${range}`);
+  if (cross) cross.setAttribute('opacity', '0');
+}
+
+function togglePeerBasket(key) {
+  peerHidden[key] = !peerHidden[key];
+  drawPeerChart();
+}
+
+function rPeers(t) {
+  const lv = live[t] || {};
+  const catKey = TICKER_CAT[t];
+  const cat = CATS[catKey];
+  if (!lv || lv.error) return '';
+
+  // Individual ticker indexed returns
+  const ranges = [
+    { label: '1M', from: daysAgo(30) },
+    { label: 'YTD', from: ytdStart() },
+    { label: '1Y', from: oneYrAgo() },
+  ];
+
+  // Get EV for this ticker
+  let ev = null;
+  if (lv.mktCap) {
+    const raw = lv.mktCap, num = parseFloat(raw);
+    const mult = raw.includes('T') ? 1e12 : raw.includes('B') ? 1e9 : raw.includes('M') ? 1e6 : 1;
+    ev = num * mult;
+    const fin = finCache[t];
+    if (fin) ev += (fin.totalDebt || 0) - (fin.cash || 0);
+  }
+
+  // Compute EV weight within its basket
+  let evWeight = null;
+  if (ev && cat) {
+    let totalEV = 0;
+    cat.tickers.forEach(ct => {
+      const clv = live[ct];
+      if (!clv || clv.error || !clv.mktCap) return;
+      const raw = clv.mktCap, num = parseFloat(raw);
+      const mult = raw.includes('T') ? 1e12 : raw.includes('B') ? 1e9 : raw.includes('M') ? 1e6 : 1;
+      let cev = num * mult;
+      const cf = finCache[ct];
+      if (cf) cev += (cf.totalDebt || 0) - (cf.cash || 0);
+      totalEV += cev;
+    });
+    if (totalEV > 0) evWeight = ev / totalEV;
+  }
+
+  const retCells = ranges.map(r => {
+    let ret = null;
+    if (lv.priceMap && lv.price) {
+      const priceDates = Object.keys(lv.priceMap).sort();
+      let basePrice = null;
+      for (const d of priceDates) {
+        if (d >= r.from) { basePrice = lv.priceMap[d]; break; }
+      }
+      if (basePrice) ret = ((lv.price - basePrice) / basePrice) * 100;
+    }
+    if (ret == null) {
+      if (r.label === '1M') ret = lv.mo1Pct;
+      else if (r.label === 'YTD') ret = lv.ytdPct;
+      else if (r.label === '1Y') ret = lv.yr1Pct;
+    }
+    return ret;
+  });
+
+  // Basket returns for the same periods
+  const basketRets = ranges.map(r => getBasketReturn(catKey, r.from));
+
+  // Relative performance (ticker vs basket)
+  const relPerf = retCells.map((ret, i) => {
+    if (ret == null || basketRets[i] == null) return null;
+    return ret - basketRets[i];
+  });
+
+  const colors = { industrials: '#4f8ef7', smr: '#3dd68c', fuel: '#f7c94f', etf: '#a78bfa' };
+
+  return `
+    <div class="shd">Peer basket · <span style="color:${colors[catKey]}">${cat.label}</span></div>
+    <div class="kg">
+      ${kv('EV', ev ? fmtCap(ev) : '<span class="na">N/A</span>')}
+      ${kv('Basket weight', evWeight != null ? (evWeight * 100).toFixed(1) + '%' : '<span class="na">N/A</span>')}
+    </div>
+    <table class="ptbl" style="margin-top:8px">
+      <thead><tr><th></th><th>1M</th><th>YTD</th><th>1Y</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>${t}</td>
+          ${retCells.map(r => `<td>${r != null ? ps(r) : '<span class="na">N/A</span>'}</td>`).join('')}
+        </tr>
+        <tr>
+          <td style="color:${colors[catKey]}">${cat.label.split(' ')[0]} basket</td>
+          ${basketRets.map(r => `<td>${r != null ? ps(r) : '<span class="na">N/A</span>'}</td>`).join('')}
+        </tr>
+        <tr>
+          <td>Relative</td>
+          ${relPerf.map(r => `<td>${r != null ? ps(r) : '<span class="na">N/A</span>'}</td>`).join('')}
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:8px">
+      Basket peers: ${cat.tickers.join(', ')} · EV-weighted indexed returns
+    </div>`;
+}
+
 function renderCard(t){
   const lv=live[t],en=EN[t];
   let ph,ch;
@@ -2057,7 +2545,7 @@ function renderCard(t){
   }
   const body=!lv
     ?`<div style="display:flex;flex-direction:column;gap:6px">${[95,80,90,70,85].map(w=>`<div class="sk" style="height:10px;width:${w}%"></div>`).join('')}</div>`
-    :activeTab==='overview'?rOverview(t):activeTab==='valuation'?rValuation(t):activeTab==='financials'?rFinancials(t):activeTab==='coverage'?rCoverage(t):activeTab==='filings'?rFilings(t):activeTab==='ownership'?rOwnership(t):rNews(t);
+    :activeTab==='overview'?rOverview(t):activeTab==='valuation'?rValuation(t):activeTab==='financials'?rFinancials(t):activeTab==='coverage'?rCoverage(t):activeTab==='filings'?rFilings(t):activeTab==='ownership'?rOwnership(t):activeTab==='peers'?rPeers(t):rNews(t);
   return`<div class="card"><div class="ch"><div><div class="tkr">${t}</div><div class="cn">${NAMES[t]}</div></div><div class="pb">${ph}${ch}</div></div>${body}</div>`;
 }
 
@@ -2129,6 +2617,14 @@ function setTab(tab,el){
   activeTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
+  // Show/hide peer panel
+  const pp = document.getElementById('peerPanel');
+  if (tab === 'peers') {
+    pp.classList.add('show');
+    drawPeerChart();
+  } else {
+    pp.classList.remove('show');
+  }
   if (tab==='financials') {
     TICKERS.forEach(t => {
       if (live[t] && !live[t].error && !finCache[t]) {
